@@ -1,0 +1,218 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-server
+  namespace: guard-kube
+  annotations:
+    guard.io/security-components: "[\"firewall\"]"
+spec:
+  selector:
+    matchLabels:
+      app: ssh-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ssh-server
+    spec:
+      containers:
+      ## container - ssh-server
+      - name: ssh-server
+        image: keksgesicht/ubuntu-ssh
+        ports:
+        - containerPort: 22
+        lifecycle:
+          postStart:
+            exec:
+              command: ["apt-get", "install", "hping3", "-y"]
+        volumeMounts:
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      ## /container  - ssh-server
+
+      ## container - polycube
+      - name: polycubed
+        image: polycubenetwork/polycube:latest
+        command: ["polycubed", "--loglevel=DEBUG", "--addr=0.0.0.0", "--logfile=/host/var/log/pcn_k8s"]
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 30; /usr/local/bin/polycubectl synflood add synflood1"]
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
+        - name: usr-src
+          mountPath: /usr/src
+        - name: cni-path
+          mountPath: /host/opt/cni/bin
+        - name: etc-cni-netd
+          mountPath: /host/etc/cni/net.d
+        - name: var-log
+          mountPath: /host/var/log
+        securityContext:
+          privileged: true
+        ports:
+          - name: polycubed
+            containerPort: 9000
+        terminationMessagePolicy: FallbackToLogsOnError
+      ## /container  - polycube
+
+      # container - polycubebeat
+      - name: polycubebeat
+        image: alexcarrega/guard:polycubebeat
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: ssh-server-polycubebeat-config
+          mountPath: /root/config/
+      # /container - polycubebeat
+
+      ## container - metricbeat
+      - name: metricbeat
+        image: docker.elastic.co/beats/metricbeat:6.8.1
+        args: ["-c", "/usr/share/metricbeat/config/metricbeat.yml"]
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: ssh-server-metricbeat-config
+          mountPath: /usr/share/metricbeat/config/
+        - name: ssh-server-metricbeat-modules
+          mountPath: /usr/share/metricbeat/modules.d/
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      ## /container - metricbeat
+
+      ## container - logstash
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:6.8.1
+        ports:
+        - containerPort: 5144
+        - containerPort: 5244
+        volumeMounts:
+          - name: ssh-server-logstash
+            mountPath: /usr/share/logstash/config/
+          - name: ssh-server-logstash-conf
+            mountPath: /usr/share/logstash/pipeline/
+      ## /container - logstash
+
+      initContainers:
+      - name: polycubebeat-configuration
+        image: busybox
+        command: ["sh", "-c", "cat /ssh-server-polycubebeat-config/ref/polycubebeat.yml > /ssh-server-polycubebeat-config/polycubebeat.yml"]
+        volumeMounts:
+        - name: ssh-server-polycubebeat
+          mountPath: /ssh-server-polycubebeat-config/ref/polycubebeat.yml
+          subPath: polycubebeat.yml
+        - name: ssh-server-polycubebeat-config
+          mountPath: /ssh-server-polycubebeat-config
+      - name: metricbeat-configuration
+        image: busybox
+        command: ["sh", "-c", "cat /ssh-server-metricbeat-modules/ref/system.yml > /ssh-server-metricbeat-modules/system.yml"]
+        volumeMounts:
+        - name: ssh-server-metricbeat
+          mountPath: /ssh-server-metricbeat-modules/ref/system.yml
+          subPath: system.yml
+        - name: ssh-server-metricbeat-modules
+          mountPath: /ssh-server-metricbeat-modules
+
+      volumes:
+      ## volumes - init-containers
+      - name: ssh-server-polycubebeat-config
+        emptyDir: {}
+      - name: ssh-server-metricbeat-modules
+        emptyDir: {}
+      ## /volumes - init-containers
+
+      ## volumes - ssh-server + polycube + metricbeat
+      - name: proc
+        hostPath:
+          path: /proc
+      ## /volumes - ssh-server + polycube + metricbeat
+
+      ## volumes - ssh-server + metricbeat
+      - name: cgroup
+        hostPath:
+          path: /sys/fs/cgroup
+      ## /volumes - ssh-server + metricbeat
+
+      ## volumes - polycube
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: usr-src
+        hostPath:
+          path: /usr/src
+      - name: cni-path
+        hostPath:
+          path: /opt/cni/bin
+      - name: etc-cni-netd
+        hostPath:
+          path: /etc/cni/net.d
+      - name: var-log
+        hostPath:
+          path: /var/log
+      - name: netns
+        hostPath:
+          path: /var/run/netns
+      ## /volumes - polycube
+
+      ## volumes - polycubebeat
+      - name: ssh-server-polycubebeat
+        configMap:
+          name: ssh-server-polycubebeat
+          items:
+          - key: polycubebeat.yml
+            path: polycubebeat.yml
+      ## /volumes - polycubebeat
+
+      ## volumes - metricbeat
+      - name: ssh-server-metricbeat-config
+        configMap:
+          name: ssh-server-metricbeat
+          items:
+          - key: metricbeat.yml
+            path: metricbeat.yml
+      - name: ssh-server-metricbeat
+        configMap:
+          name: ssh-server-metricbeat
+          items:
+          - key: system.yml
+            path: system.yml
+      ## /volumes - metricbeat
+
+      ## volumes - logstash
+      - name: ssh-server-logstash
+        configMap:
+          name: ssh-server-logstash
+          items:
+          - key: logstash.yml
+            path: logstash.yml
+          - key: pipelines.yml
+            path: pipelines.yml
+          - key: log4j2.properties
+            path: log4j2.properties
+      - name: ssh-server-logstash-conf
+        configMap:
+          name: ssh-server-logstash
+          items:
+          - key: polycube.conf
+            path: polycube.conf
+          - key: system.conf
+            path: system.conf
+      ## /volumes - logstash

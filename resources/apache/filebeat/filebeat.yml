@@ -1,0 +1,21 @@
+filebeat.config.inputs:
+  path: /usr/share/filebeat/config/*.yml
+  reload:
+    enabled: true
+    period: 5s
+
+setup:
+  template.settings:
+    index.number_of_shards: 3
+
+output.logstash:
+  hosts: ["localhost:5044"]
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+logging:
+  level: info
+  selectors: ["*"]
+  metrics.enabled: false

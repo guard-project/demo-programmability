@@ -1,0 +1,189 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: guard-kube
+  annotations:
+    guard.io/security-components: "[\"firewall\"]"
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      ## container - mysql
+      - name: mysql
+        image: mysql:5.7
+        env:
+        - name: MYSQL_ALLOW_EMPTY_PASSWORD
+          value: "1"
+        ports:
+        - containerPort: 3601
+        volumeMounts:
+        - name: mysql-conf
+          mountPath: /etc/my.cnf.new
+          subPath: my.cnf.new
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      ## /container  - mysql
+
+      ## container - polycube
+      - name: polycubed
+        image: polycubenetwork/polycube:latest
+        command: ["polycubed", "--loglevel=DEBUG", "--addr=0.0.0.0", "--logfile=/host/var/log/pcn_k8s"]
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
+        - name: usr-src
+          mountPath: /usr/src
+        - name: cni-path
+          mountPath: /host/opt/cni/bin
+        - name: etc-cni-netd
+          mountPath: /host/etc/cni/net.d
+        - name: var-log
+          mountPath: /host/var/log
+        securityContext:
+          privileged: true
+        ports:
+          - name: polycubed
+            containerPort: 9000
+        terminationMessagePolicy: FallbackToLogsOnError
+      ## /container  - polycube
+
+      ## container - metricbeat
+      - name: metricbeat
+        image: docker.elastic.co/beats/metricbeat:7.2.0
+        args: ["-c", "/usr/share/metricbeat/config/metricbeat.yml"]
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: mysql-metricbeat-config
+          mountPath: /usr/share/metricbeat/config/
+        - name: mysql-metricbeat-modules
+          mountPath: /usr/share/metricbeat/modules.d/
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      ## /container - metricbeat
+
+      ## container - logstash
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:7.2.0
+        securityContext:
+          runAsUser: 0
+        ports:
+        - containerPort: 5144
+        volumeMounts:
+          - name: mysql-logstash
+            mountPath: /usr/share/logstash/config/
+          - name: mysql-logstash-conf
+            mountPath: /usr/share/logstash/pipeline/
+      ## /container - logstash
+
+      initContainers:
+      - name: metricbeat-configuration
+        image: busybox
+        command: ["sh", "-c", "cat /mysql-metricbeat-modules/ref/system.yml > /mysql-metricbeat-modules/system.yml; cat /mysql-metricbeat-modules/ref/mysql.yml > /mysql-metricbeat-modules/mysql.yml"]
+        volumeMounts:
+        - name: mysql-metricbeat
+          mountPath: /mysql-metricbeat-modules/ref/
+        - name: mysql-metricbeat-modules
+          mountPath: /mysql-metricbeat-modules
+
+      volumes:
+      ## volumes - init-containers
+      - name: mysql-metricbeat-modules
+        emptyDir: {}
+      ## /volumes - init-containers
+
+      ## volumes - mysql
+      - name: mysql-conf
+        configMap:
+          name: mysql-conf
+          items:
+          - key: my.cnf
+            path: my.cnf
+      ## /volumes - mysql
+
+      ## volumes - mysql + polycube + metricbeat
+      - name: proc
+        hostPath:
+          path: /proc
+      ## /volumes - mysql + polycube + metricbeat
+
+      ## volumes - mysql + metricbeat
+      - name: cgroup
+        hostPath:
+          path: /sys/fs/cgroup
+      ## /volumes - mysql + metricbeat
+
+      ## volumes - polycube
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: usr-src
+        hostPath:
+          path: /usr/src
+      - name: cni-path
+        hostPath:
+          path: /opt/cni/bin
+      - name: etc-cni-netd
+        hostPath:
+          path: /etc/cni/net.d
+      - name: var-log
+        hostPath:
+          path: /var/log
+      - name: netns
+        hostPath:
+          path: /var/run/netns
+        ## /volumes - polycube
+
+      ## volumes- metricbeat
+      - name: mysql-metricbeat-config
+        configMap:
+          name: mysql-metricbeat
+          items:
+          - key: metricbeat.yml
+            path: metricbeat.yml
+      - name: mysql-metricbeat
+        configMap:
+          name: mysql-metricbeat
+          items:
+          - key: mysql.yml
+            path: mysql.yml
+          - key: system.yml
+            path: system.yml
+      ## /volumes - metricbeat
+
+      ## volumes - logstash
+      - name: mysql-logstash
+        configMap:
+          name: mysql-logstash
+          items:
+          - key: logstash.yml
+            path: logstash.yml
+          - key: pipelines.yml
+            path: pipelines.yml
+          - key: log4j2.properties
+            path: log4j2.properties
+      - name: mysql-logstash-conf
+        configMap:
+          name: mysql-logstash
+          items:
+          - key: mysql-system.conf
+            path: mysql-system.conf
+      ## /volumes - logstash

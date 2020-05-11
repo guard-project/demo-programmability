@@ -1,0 +1,240 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apache
+  namespace: guard-kube
+  annotations:
+    guard.io/security-components: "[\"firewall\"]"
+spec:
+  selector:
+    matchLabels:
+      app: apache
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: apache
+    spec:
+      containers:
+      ## container - apache
+      - name: apache
+        image: httpd
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: apache-conf
+          mountPath: /usr/local/apache2/conf/httpd.conf
+          subPath: httpd.conf
+        - name: apache-log
+          mountPath: /usr/local/apache2/logs
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      ## /container  - apache
+
+      ## container - polycube
+      - name: polycubed
+        image: polycubenetwork/polycube:latest
+        command: ["polycubed", "--loglevel=DEBUG", "--addr=0.0.0.0", "--logfile=/host/var/log/pcn_k8s"]
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
+        - name: usr-src
+          mountPath: /usr/src
+        - name: cni-path
+          mountPath: /host/opt/cni/bin
+        - name: etc-cni-netd
+          mountPath: /host/etc/cni/net.d
+        - name: log
+          mountPath: /host/var/log
+        securityContext:
+          privileged: true
+        ports:
+          - name: polycubed
+            containerPort: 9000
+        terminationMessagePolicy: FallbackToLogsOnError
+      ## /container  - polycube
+
+      ## container - filebeat
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:6.8.0
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: apache-filebeat
+          mountPath: /usr/share/filebeat/filebeat.yml
+          subPath: filebeat.yml
+        - name: apache-filebeat-config
+          mountPath: /usr/share/filebeat/config/
+        - name: apache-log
+          mountPath: /var/log/apache2/
+      ## /container - filebeat
+
+      ## container - metricbeat
+      - name: metricbeat
+        image: docker.elastic.co/beats/metricbeat:6.8.1
+        args: ["-c", "/usr/share/metricbeat/config/metricbeat.yml"]
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: apache-metricbeat-config
+          mountPath: /usr/share/metricbeat/config/
+        - name: apache-metricbeat-modules
+          mountPath: /usr/share/metricbeat/modules.d/
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      ## /container - metricbeat
+
+      ## container - logstash
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:6.8.0
+        securityContext:
+          runAsUser: 0
+        ports:
+        - containerPort: 5044
+        - containerPort: 5144
+        volumeMounts:
+          - name: apache-logstash
+            mountPath: /usr/share/logstash/config/
+          - name: apache-logstash-conf
+            mountPath: /usr/share/logstash/pipeline/
+      ## /container - logstash
+
+      initContainers:
+      - name: filebeat-configuration
+        image: busybox
+        command: ["sh", "-c", "cat /apache-filebeat-config/ref/log.yml > /apache-filebeat-config/log.yml"]
+        volumeMounts:
+        - name: apache-filebeat-log
+          mountPath: /apache-filebeat-config/ref/log.yml
+          subPath: log.yml
+        - name: apache-filebeat-config
+          mountPath: /apache-filebeat-config
+      - name: metricbeat-configuration
+        image: busybox
+        command: ["sh", "-c", "cat /apache-metricbeat-modules/ref/system.yml > /apache-metricbeat-modules/system.yml"]
+        volumeMounts:
+        - name: apache-metricbeat
+          mountPath: /apache-metricbeat-modules/ref/system.yml
+          subPath: system.yml
+        - name: apache-metricbeat-modules
+          mountPath: /apache-metricbeat-modules
+
+      volumes:
+      ## volumes - init-containers
+      - name: apache-filebeat-config
+        emptyDir: {}
+      - name: apache-metricbeat-modules
+        emptyDir: {}
+      ## /volumes - init-containers
+
+      ## volumes - apache
+      - name: apache-conf
+        configMap:
+          name: apache-conf
+          items:
+          - key: httpd.conf
+            path: httpd.conf
+      - name: apache-log
+        hostPath:
+          path: /var/log/apache2
+      ## /volumes - apache + filebeat
+
+      ## volumes - apache + polycube + metricbeat
+      - name: proc
+        hostPath:
+          path: /proc
+      ## /volumes - apache + polycube + metricbeat
+
+      ## volumes - apache + metricbeat
+      - name: cgroup
+        hostPath:
+          path: /sys/fs/cgroup
+      ## /volumes - apache + metricbeat
+
+      ## volumes - polycube
+      - name: log
+        hostPath:
+          path: /var/log
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: usr-src
+        hostPath:
+          path: /usr/src
+      - name: cni-path
+        hostPath:
+          path: /opt/cni/bin
+      - name: etc-cni-netd
+        hostPath:
+          path: /etc/cni/net.d
+      - name: netns
+        hostPath:
+          path: /var/run/netns
+        ## /volumes - polycube
+
+      ## volumes - filebeat
+      - name: apache-filebeat
+        configMap:
+          name: apache-filebeat
+          items:
+          - key: filebeat.yml
+            path: filebeat.yml
+      - name: apache-filebeat-log
+        configMap:
+          name: apache-filebeat
+          items:
+          - key: log.yml
+            path: log.yml
+      ## /volumes- filebeat
+
+      ## volumes- metricbeat
+      - name: apache-metricbeat-config
+        configMap:
+          name: apache-metricbeat
+          items:
+          - key: metricbeat.yml
+            path: metricbeat.yml
+      - name: apache-metricbeat
+        configMap:
+          name: apache-metricbeat
+          items:
+          - key: system.yml
+            path: system.yml
+      ## /volumes - metricbeat
+
+      ## volumes - logstash
+      - name: apache-logstash
+        configMap:
+          name: apache-logstash
+          items:
+          - key: logstash.yml
+            path: logstash.yml
+          - key: pipelines.yml
+            path: pipelines.yml
+          - key: log4j2.properties
+            path: log4j2.properties
+      - name: apache-logstash-conf
+        configMap:
+          name: apache-logstash
+          items:
+          - key: apache.conf
+            path: apache.conf
+          - key: system.conf
+            path: system.conf
+      ## /volumes - logstash

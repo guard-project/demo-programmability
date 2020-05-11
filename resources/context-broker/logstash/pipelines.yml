@@ -1,0 +1,11 @@
+- pipeline.id: apache
+  path.config: "/usr/share/logstash/pipeline/apache.conf"
+
+- pipeline.id: mysql
+  path.config: "/usr/share/logstash/pipeline/mysql.conf"
+
+- pipeline.id: polycube
+  path.config: "/usr/share/logstash/pipeline/polycube.conf"
+
+- pipeline.id: system
+  path.config: "/usr/share/logstash/pipeline/system.conf"

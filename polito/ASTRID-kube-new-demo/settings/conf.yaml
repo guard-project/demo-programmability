@@ -1,0 +1,12 @@
+fwInitTimer: 15
+paths:
+  kubeconfig: 
+endpoints:
+  verekube: 
+    infrastructure-info: http://192.168.56.1:8083/controller/register/insfrastructure
+    infrastructure-event: 
+  fake-cb:
+    configuration: http://localhost:8083
+formats:
+  infrastructure-info: xml
+  infrastructure-event: xml

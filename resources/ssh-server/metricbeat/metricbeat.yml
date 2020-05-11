@@ -1,0 +1,18 @@
+metricbeat.config.modules:
+  path: /usr/share/metricbeat/modules.d/*.yml
+  reload:
+    enabled: true
+    period: 5s
+
+output.logstash:
+  hosts: ["localhost:5144"]
+
+logging:
+  level: info
+  selectors: ["*"]
+  to_files: true
+  files:
+    path: /usr/share/metricbeat/logs
+    name: metricbeat
+    keepfiles: 7
+    permissions: 0644

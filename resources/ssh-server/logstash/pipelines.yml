@@ -1,0 +1,5 @@
+- pipeline.id: polycube
+  path.config: "/usr/share/logstash/pipeline/polycube.conf"
+
+- pipeline.id: system
+  path.config: "/usr/share/logstash/pipeline/system.conf"

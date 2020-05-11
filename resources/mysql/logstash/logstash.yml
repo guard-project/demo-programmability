@@ -1,0 +1,6 @@
+path:
+  data: /usr/share/logstash/lib
+  logs: /usr/share/logstash/log
+
+log:
+  level: info
