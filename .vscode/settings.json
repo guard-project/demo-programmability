@@ -1,8 +1,17 @@
 {
     "cSpell.words": [
+        "Cubebeat",
+        "ENTRYPOINT",
+        "alexcarrega",
+        "busybox",
         "filebeat",
+        "guardproject",
+        "keystore",
         "kibana",
         "metricbeat",
+        "mkdir",
+        "netns",
+        "polycube",
         "synflood"
     ]
 }

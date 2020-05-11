@@ -84,13 +84,13 @@ Set the period to collect data by the agents.
 
 ### SSH Server
 
-- Polycubebeat
+- Cubebeat
 
   ```console
-  k8s-period-polycubebeat -p deploy/ssh-server -s <period>
+  k8s-period-cubebeat -p deploy/ssh-server -s <period>
   ```
 
-  E.g.: ```k8s-period-polycubebeat -p deploy/ssh-server -s 10s```
+  E.g.: ```k8s-period-cubebeat -p deploy/ssh-server -s 10s```
 
 ## System
 
@@ -154,18 +154,18 @@ Set the period to collect data by the agents.
 - ```k8s-start``` - Start the demo.
 -
 - ```k8s-frwd``` -t <target> - port forwarding for <target>. Possible values: elastic, kibana.
-- ```k8s-polycubeat-docker-make``` - build ```polycubeat``` docker image and push to ```alexcarrega/guard:polycubeat``` in _docker-hub_.
-  The files are in directory ```resources/ssh-server/polycubeat/docker_build_image```
+- ```k8s-cubebeat-docker-make``` - build ```polycubeat``` docker image and push to ```alexcarrega/guard:cubebeat``` in _docker-hub_.
+  The files are in directory ```resources/ssh-server/cubebeat/docker_build_image```
 
 ### ```period```
 
 - ```k8s-period-filebeat``` -p <pod> -s <period> - sets the <period> (e.g. 10s) for ```filebeat``` in <pod>.
 - ```k8s-period-metricbeat``` -p <pod> -m <module> -s <period> - sets the <period> (e.g. 10s) for <module> of ```metricbeat``` in <pod>.
-- ```k8s-period-polycubebeat``` -p <pod> -s <period> - sets the <period> (e.g. 10s) for ```polycubebeat``` in <pod>.
+- ```k8s-period-cubebeat``` -p <pod> -s <period> - sets the <period> (e.g. 10s) for ```cubebeat``` in <pod>.
 
 - ```k8s-period-filebeat``` -p <pod> - gets the __period__ (e.g. 10s) for ```filebeat``` in <pod>.
 - ```k8s-period-metricbeat``` -p <pod> -m <module> - gets the __period__ (e.g. 10s) for <module> of ```metricbeat``` in <pod> pod.
-- ```k8s-period-polycubebeat``` -p <pod> - gets the __period__ (e.g. 10s) for ```polycubebeat``` in <pod>.
+- ```k8s-period-cubebeat``` -p <pod> - gets the __period__ (e.g. 10s) for ```cubebeat``` in <pod>.
 
 ## Info about pods
 
@@ -198,8 +198,8 @@ Set the period to collect data by the agents.
 - ```metricbeat.yml``` in ```/usr/share/metricbeat/config```.
 - ```system.yml``` in ```/usr/share/metricbeat/modules.d```.
 
-### Polycubebeat
+### Cubebeat
 
-- ```polycubebeat.yml``` in ```/root/config/polycubebeat.yml```.
-- Symbolic link to ```/root/config/polycubebeat.yml``` in ```/root/polycubebeat.yml```.
-- Executable in ```/root/polycubebeat```.
+- ```cubebeat.yml``` in ```/root/config/cubebeat.yml```.
+- Symbolic link to ```/root/config/cubebeat.yml``` in ```/root/cubebeat.yml```.
+- Executable in ```/root/cubebeat```.

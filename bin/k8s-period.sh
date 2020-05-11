@@ -92,9 +92,9 @@ function k8s-period-filebeat {
     fi
 }
 
-function k8s-period-polycubebeat {
+function k8s-period-cubebeat {
     function usage {
-        echo "Usage: k8s-period-polycubebeat [ -h ] [ -p <pod> [ -s <period> ] ]"
+        echo "Usage: k8s-period-cubebeat [ -h ] [ -p <pod> [ -s <period> ] ]"
     }
 
     OPTIND=1
@@ -125,10 +125,10 @@ function k8s-period-polycubebeat {
     fi
 
     if [ -n "$period" ]; then
-        k8s exec $pod -c polycubebeat -- sed -i "s/period:.*/period: $period/g" /root/config/polycubebeat.yml
-        k8s exec $pod -c polycubebeat -- cat /root/config/polycubebeat.yml | grep period
-        k8s exec $pod -c polycubebeat -- pkill -HUP polycubebeat
+        k8s exec $pod -c cubebeat -- sed -i "s/period:.*/period: $period/g" /root/config/cubebeat.yml
+        k8s exec $pod -c cubebeat -- cat /root/config/cubebeat.yml | grep period
+        k8s exec $pod -c cubebeat -- pkill -HUP cubebeat
     else
-        k8s exec $pod -c polycubebeat -- cat /root/config/polycubebeat.yml | grep period
+        k8s exec $pod -c cubebeat -- cat /root/config/cubebeat.yml | grep period
     fi
 }

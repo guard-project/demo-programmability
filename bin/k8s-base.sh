@@ -29,13 +29,14 @@ function k8s-start {
                                             --from-file=$MYSQL_DIR/logstash/log4j2.properties \
                                             --from-file=$MYSQL_DIR/logstash/conf.d/mysql-system.conf
     # ssh-server
-    k8s create configmap ssh-server-polycubebeat --from-file=$SSH_SERVER_DIR/polycubebeat/polycubebeat.yml
+    k8s create configmap ssh-server-cubebeat --from-file=$SSH_SERVER_DIR/cubebeat/cubebeat.yml \
+                                                --from-file=$SSH_SERVER_DIR/cubebeat/config.d/synflood.yml
     k8s create configmap ssh-server-metricbeat --from-file=$SSH_SERVER_DIR/metricbeat/metricbeat.yml \
-                                                  --from-file=$SSH_SERVER_DIR/metricbeat/modules.d/system.yml
+                                               --from-file=$SSH_SERVER_DIR/metricbeat/modules.d/system.yml
     k8s create configmap ssh-server-logstash --from-file=$SSH_SERVER_DIR/logstash/logstash.yml \
                                                 --from-file=$SSH_SERVER_DIR/logstash/pipelines.yml \
                                                 --from-file=$SSH_SERVER_DIR/logstash/log4j2.properties \
-                                                --from-file=$SSH_SERVER_DIR/logstash/conf.d/polycube.conf \
+                                                --from-file=$SSH_SERVER_DIR/logstash/conf.d/synflood.conf \
                                                 --from-file=$SSH_SERVER_DIR/logstash/conf.d/system.conf
     # context-broker
     k8s create configmap context-broker-logstash --from-file=$CONTEXT_BROKER_DIR/logstash/logstash.yml \
@@ -43,7 +44,7 @@ function k8s-start {
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/log4j2.properties \
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/apache.conf \
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/mysql.conf \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/polycube.conf \
+                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/synflood.conf \
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/system.conf
     k8s create configmap context-broker-elasticsearch --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch.keystore \
                                                          --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch.yml \
@@ -139,7 +140,7 @@ function k8s-frwd {
     k8s port-forward -v=0 --address=0.0.0.0 deploy/$pod $port:$port
 }
 
-function k8s-polycubebeat-docker-make {
-    docker build -t alexcarrega/guard:polycubebeat $SSH_SERVER_DIR/polycubebeat/docker_build_image
-    docker push alexcarrega/guard:polycubebeat
+function k8s-cubebeat-docker-make {
+    docker build -t alexcarrega/guard:cubebeat $SSH_SERVER_DIR/cubebeat/docker_build_image
+    docker push alexcarrega/guard:cubebeat
 }

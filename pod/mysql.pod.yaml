@@ -94,16 +94,6 @@ spec:
             mountPath: /usr/share/logstash/pipeline/
       ## /container - logstash
 
-      initContainers:
-      - name: metricbeat-configuration
-        image: busybox
-        command: ["sh", "-c", "cat /mysql-metricbeat-modules/ref/system.yml > /mysql-metricbeat-modules/system.yml; cat /mysql-metricbeat-modules/ref/mysql.yml > /mysql-metricbeat-modules/mysql.yml"]
-        volumeMounts:
-        - name: mysql-metricbeat
-          mountPath: /mysql-metricbeat-modules/ref/
-        - name: mysql-metricbeat-modules
-          mountPath: /mysql-metricbeat-modules
-
       volumes:
       ## volumes - init-containers
       - name: mysql-metricbeat-modules

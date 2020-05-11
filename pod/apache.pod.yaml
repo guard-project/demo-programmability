@@ -115,26 +115,6 @@ spec:
             mountPath: /usr/share/logstash/pipeline/
       ## /container - logstash
 
-      initContainers:
-      - name: filebeat-configuration
-        image: busybox
-        command: ["sh", "-c", "cat /apache-filebeat-config/ref/log.yml > /apache-filebeat-config/log.yml"]
-        volumeMounts:
-        - name: apache-filebeat-log
-          mountPath: /apache-filebeat-config/ref/log.yml
-          subPath: log.yml
-        - name: apache-filebeat-config
-          mountPath: /apache-filebeat-config
-      - name: metricbeat-configuration
-        image: busybox
-        command: ["sh", "-c", "cat /apache-metricbeat-modules/ref/system.yml > /apache-metricbeat-modules/system.yml"]
-        volumeMounts:
-        - name: apache-metricbeat
-          mountPath: /apache-metricbeat-modules/ref/system.yml
-          subPath: system.yml
-        - name: apache-metricbeat-modules
-          mountPath: /apache-metricbeat-modules
-
       volumes:
       ## volumes - init-containers
       - name: apache-filebeat-config

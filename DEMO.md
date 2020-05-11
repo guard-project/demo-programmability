@@ -172,7 +172,7 @@ For each steps see the ```SSH Server```, ```Jitter```, and ```Latency``` dashboa
 2. In a shell, set the period to 5 seconds.
 
    ```console
-   k8s-period-polycubebeat -p deploy/ssh-server -s 5s
+   k8s-period-cubebeat -p deploy/ssh-server -s 5s
    ```
 
    See the dashboards.
@@ -180,7 +180,7 @@ For each steps see the ```SSH Server```, ```Jitter```, and ```Latency``` dashboa
 3. In the same shell of step 2, set the period to 20 seconds.
 
    ```console
-   k8s-period-polycubebeat -p deploy/ssh-server -s 20s
+   k8s-period-cubebeat -p deploy/ssh-server -s 20s
    ```
 
    See the dashboards.
@@ -198,7 +198,7 @@ For each steps see the ```SSH Server```, ```Jitter```, and ```Latency``` dashboa
 5. In the same shell of step 2, set the period to 5 seconds.
 
    ```console
-   k8s-period-polycubebeat -p deploy/ssh-server -s 5s
+   k8s-period-cubebeat -p deploy/ssh-server -s 5s
    ```
 
    See the dashboards.
@@ -206,7 +206,7 @@ For each steps see the ```SSH Server```, ```Jitter```, and ```Latency``` dashboa
 6. In the same shell of step 2, set the period to 20 seconds.
 
    ```console
-   k8s-period-polycubebeat -p deploy/ssh-server -s 20s
+   k8s-period-cubebeat -p deploy/ssh-server -s 20s
    ```
 
    See the dashboards.
@@ -224,7 +224,7 @@ For each steps see the ```SSH Server```, ```Jitter```, and ```Latency``` dashboa
 8. In the same shell of step 2, set the period to 5 seconds.
 
    ```console
-   k8s-period-polycubebeat -p deploy/ssh-server -s 5s
+   k8s-period-cubebeat -p deploy/ssh-server -s 5s
    ```
 
    See the dashboards.
@@ -232,7 +232,7 @@ For each steps see the ```SSH Server```, ```Jitter```, and ```Latency``` dashboa
 9. In the same shell of step 2, set the period to 20 seconds.
 
    ```console
-   k8s-period-polycubebeat -p deploy/ssh-server -s 20s
+   k8s-period-cubebeat -p deploy/ssh-server -s 20s
    ```
 
    See the dashboards.

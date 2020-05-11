@@ -59,9 +59,9 @@ spec:
         terminationMessagePolicy: FallbackToLogsOnError
       ## /container  - polycube
 
-      # container - polycubebeat
-      - name: polycubebeat
-        image: alexcarrega/guard:polycubebeat
+      # container - cubebeat
+      - name: cubebeat
+        image: guardproject/cubebeat:latest
         securityContext:
           runAsUser: 0
         resources:
@@ -71,9 +71,11 @@ spec:
             cpu: 100m
             memory: 100Mi
         volumeMounts:
-        - name: ssh-server-polycubebeat-config
+        - name: ssh-server-cubebeat
           mountPath: /root/config/
-      # /container - polycubebeat
+        - name: ssh-server-cubebeat-config
+          mountPath: $CUBEBEAT_ROOT/config.d/
+      # /container - cubebeat
 
       ## container - metricbeat
       - name: metricbeat
@@ -111,29 +113,9 @@ spec:
             mountPath: /usr/share/logstash/pipeline/
       ## /container - logstash
 
-      initContainers:
-      - name: polycubebeat-configuration
-        image: busybox
-        command: ["sh", "-c", "cat /ssh-server-polycubebeat-config/ref/polycubebeat.yml > /ssh-server-polycubebeat-config/polycubebeat.yml"]
-        volumeMounts:
-        - name: ssh-server-polycubebeat
-          mountPath: /ssh-server-polycubebeat-config/ref/polycubebeat.yml
-          subPath: polycubebeat.yml
-        - name: ssh-server-polycubebeat-config
-          mountPath: /ssh-server-polycubebeat-config
-      - name: metricbeat-configuration
-        image: busybox
-        command: ["sh", "-c", "cat /ssh-server-metricbeat-modules/ref/system.yml > /ssh-server-metricbeat-modules/system.yml"]
-        volumeMounts:
-        - name: ssh-server-metricbeat
-          mountPath: /ssh-server-metricbeat-modules/ref/system.yml
-          subPath: system.yml
-        - name: ssh-server-metricbeat-modules
-          mountPath: /ssh-server-metricbeat-modules
-
       volumes:
       ## volumes - init-containers
-      - name: ssh-server-polycubebeat-config
+      - name: ssh-server-cubebeat-config
         emptyDir: {}
       - name: ssh-server-metricbeat-modules
         emptyDir: {}
@@ -172,14 +154,20 @@ spec:
           path: /var/run/netns
       ## /volumes - polycube
 
-      ## volumes - polycubebeat
-      - name: ssh-server-polycubebeat
+      ## volumes - cubebeat
+      - name: ssh-server-cubebeat-config
         configMap:
-          name: ssh-server-polycubebeat
+          name: ssh-server-cubebeat
           items:
-          - key: polycubebeat.yml
-            path: polycubebeat.yml
-      ## /volumes - polycubebeat
+          - key: cubebeat.yml
+            path: cubebeat.yml
+      - name: ssh-server-cubebeat
+        configMap:
+          name: ssh-server-cubebeat
+          items:
+            - key: synflood.yml
+              path: synflood.yml
+      ## /volumes - cubebeat
 
       ## volumes - metricbeat
       - name: ssh-server-metricbeat-config

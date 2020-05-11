@@ -1,0 +1,23 @@
+cubebeat:
+  config.inputs:
+    path: config.d/*.yml
+    reload:
+      enabled: true
+      period: 10s
+
+name: cubebeat
+tags: ["polycube", "cubebeat"]
+
+output.logstash:
+  hosts: ["localhost:5044"]
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+
+logging:
+  level: info
+  selectors: ["*"]
+
+monitoring.enabled: false
