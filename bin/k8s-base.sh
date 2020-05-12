@@ -59,7 +59,12 @@ function k8s-start {
 
     echo Context broker
     k8s apply -f pod/context-broker.pod.yaml
-    pause "Wait until the pod is running (use k8s-pod in another terminal)."
+    init_done=0
+    while [ $init_done -eq 0 ]; do
+        k8s exec deploy/context-broker -c elasticsearch -- curl localhost:9201 && init_done=1
+        echo "Waiting additional 30 seconds to initialize elasticsearch in context-broker"
+        sleep 30
+    done
     k8s-pod-vars -p context-broker
     echo POD context-broker=$context_broker
     echo
