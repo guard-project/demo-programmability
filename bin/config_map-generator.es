@@ -1,9 +1,9 @@
 Query
 
-DELETE polycube
+DELETE ssh-server
 DELETE apache
 
-PUT polycube
+PUT ssh-server
 {
   "mappings": {
     "doc": {
@@ -16,4 +16,4 @@ PUT polycube
   }
 }
 
-GET polycube
+GET ssh-server

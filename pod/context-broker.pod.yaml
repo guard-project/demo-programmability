@@ -14,7 +14,7 @@ spec:
         app: context-broker
     spec:
       containers:
-      ## container - zookeeper
+      # container - zookeeper
       - name: zookeeper
         image: digitalwonderland/zookeeper
         ports:
@@ -24,9 +24,9 @@ spec:
           value: "1"
         - name: ZOOKEEPER_SERVER_1
           value: localhost
-      ## /container - zookeeper
+      # /container - zookeeper
 
-      ## container - kafka
+      # container - kafka
       - name: kafka
         image: wurstmeister/kafka
         ports:
@@ -42,9 +42,9 @@ spec:
           value: "0"
         - name: KAFKA_CREATE_TOPICS
           value: "polycube:1:1,mysql:1:1,apache:1:1,system:1:1"
-      ## /container - kafka
+      # /container - kafka
 
-      ## container - logstash
+      # container - logstash
       - name: logstash
         image: docker.elastic.co/logstash/logstash:6.8.1
         ports:
@@ -56,9 +56,9 @@ spec:
             mountPath: /usr/share/logstash/pipeline/
           - name: node
             mountPath: /mnt/node
-      ## /container - logstash
+      # /container - logstash
 
-      ## container - elasticsearch
+      # container - elasticsearch
       - name: elasticsearch
         image: docker.elastic.co/elasticsearch/elasticsearch:6.8.1
         securityContext:
@@ -70,9 +70,9 @@ spec:
           mountPath: /usr/share/elasticsearch/config/
         - name: context-broker-elasticsearch-data
           mountPath: /usr/share/elasticsearch/data/
-      ## /container - elasticsearch
+      # /container - elasticsearch
 
-      ## container - kibana
+      # container - kibana
       - name: kibana
         image: docker.elastic.co/kibana/kibana:6.8.1
         ports:
@@ -85,7 +85,7 @@ spec:
           mountPath: /usr/share/kibana/data/
         - name: context-broker-kibana-resources
           mountPath: /usr/share/kibana/resources/
-      ## /container - kibana
+      # /container - kibana
 
       initContainers:
       - name: elasticsearch-configuration
@@ -106,7 +106,7 @@ spec:
           mountPath: /mnt/node/
 
       volumes:
-      ## volumes - logstash
+      # volumes - logstash
       - name: context-broker-logstash
         configMap:
           name: context-broker-logstash
@@ -125,25 +125,25 @@ spec:
             path: apache.conf
           - key: mysql.conf
             path: mysql.conf
-          - key: polycube.conf
-            path: polycube.conf
+          - key: ssh-server.conf
+            path: ssh-server.conf
           - key: system.conf
             path: system.conf
       - name: node
         hostPath:
           path: /
-      ## /volumes - logstash
+      # /volumes - logstash
 
-      ## volumes - elasticsearch
+      # volumes - elasticsearch
       - name: context-broker-elasticsearch-config
         configMap:
           name: context-broker-elasticsearch
       - name: context-broker-elasticsearch-data
         persistentVolumeClaim:
           claimName: elasticsearch-pv-claim
-      ## /volumes - elasticsearch
+      # /volumes - elasticsearch
 
-      ## volumes - kibana
+      # volumes - kibana
       - name: context-broker-kibana
         configMap:
           name: context-broker-kibana
@@ -155,4 +155,4 @@ spec:
           claimName: kibana-pv-claim
       - name: context-broker-kibana-resources
         emptyDir: {}
-      ## /volumes - kibana
+      # /volumes - kibana

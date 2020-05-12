@@ -36,7 +36,7 @@ function k8s-start {
     k8s create configmap ssh-server-logstash --from-file=$SSH_SERVER_DIR/logstash/logstash.yml \
                                                 --from-file=$SSH_SERVER_DIR/logstash/pipelines.yml \
                                                 --from-file=$SSH_SERVER_DIR/logstash/log4j2.properties \
-                                                --from-file=$SSH_SERVER_DIR/logstash/conf.d/synflood.conf \
+                                                --from-file=$SSH_SERVER_DIR/logstash/conf.d/ssh-server.conf \
                                                 --from-file=$SSH_SERVER_DIR/logstash/conf.d/system.conf
     # context-broker
     k8s create configmap context-broker-logstash --from-file=$CONTEXT_BROKER_DIR/logstash/logstash.yml \
@@ -44,7 +44,7 @@ function k8s-start {
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/log4j2.properties \
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/apache.conf \
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/mysql.conf \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/synflood.conf \
+                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/ssh-server.conf \
                                                     --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/system.conf
     k8s create configmap context-broker-elasticsearch --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch.keystore \
                                                          --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch.yml \
@@ -138,9 +138,4 @@ function k8s-frwd {
     fi
 
     k8s port-forward -v=0 --address=0.0.0.0 deploy/$pod $port:$port
-}
-
-function k8s-cubebeat-docker-make {
-    docker build -t alexcarrega/guard:cubebeat $SSH_SERVER_DIR/cubebeat/docker_build_image
-    docker push alexcarrega/guard:cubebeat
 }

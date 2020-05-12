@@ -4,8 +4,8 @@
 - pipeline.id: mysql
   path.config: "/usr/share/logstash/pipeline/mysql.conf"
 
-- pipeline.id: polycube
-  path.config: "/usr/share/logstash/pipeline/polycube.conf"
+- pipeline.id: ssh-server
+  path.config: "/usr/share/logstash/pipeline/ssh-server.conf"
 
 - pipeline.id: system
   path.config: "/usr/share/logstash/pipeline/system.conf"

@@ -154,8 +154,6 @@ Set the period to collect data by the agents.
 - ```k8s-start``` - Start the demo.
 -
 - ```k8s-frwd``` -t <target> - port forwarding for <target>. Possible values: elastic, kibana.
-- ```k8s-cubebeat-docker-make``` - build ```polycubeat``` docker image and push to ```alexcarrega/guard:cubebeat``` in _docker-hub_.
-  The files are in directory ```resources/ssh-server/cubebeat/docker_build_image```
 
 ### ```period```
 

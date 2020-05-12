@@ -16,7 +16,7 @@ spec:
         app: mysql
     spec:
       containers:
-      ## container - mysql
+      # container - mysql
       - name: mysql
         image: mysql:5.7
         env:
@@ -32,9 +32,9 @@ spec:
           mountPath: /proc
         - name: cgroup
           mountPath: /sys/fs/cgroup
-      ## /container  - mysql
+      # /container  - mysql
 
-      ## container - polycube
+      # container - polycube
       - name: polycubed
         image: polycubenetwork/polycube:latest
         command: ["polycubed", "--loglevel=DEBUG", "--addr=0.0.0.0", "--logfile=/host/var/log/pcn_k8s"]
@@ -55,9 +55,9 @@ spec:
           - name: polycubed
             containerPort: 9000
         terminationMessagePolicy: FallbackToLogsOnError
-      ## /container  - polycube
+      # /container  - polycube
 
-      ## container - metricbeat
+      # container - metricbeat
       - name: metricbeat
         image: docker.elastic.co/beats/metricbeat:7.2.0
         args: ["-c", "/usr/share/metricbeat/config/metricbeat.yml"]
@@ -78,9 +78,9 @@ spec:
           mountPath: /proc
         - name: cgroup
           mountPath: /sys/fs/cgroup
-      ## /container - metricbeat
+      # /container - metricbeat
 
-      ## container - logstash
+      # container - logstash
       - name: logstash
         image: docker.elastic.co/logstash/logstash:7.2.0
         securityContext:
@@ -92,36 +92,31 @@ spec:
             mountPath: /usr/share/logstash/config/
           - name: mysql-logstash-conf
             mountPath: /usr/share/logstash/pipeline/
-      ## /container - logstash
+      # /container - logstash
 
       volumes:
-      ## volumes - init-containers
-      - name: mysql-metricbeat-modules
-        emptyDir: {}
-      ## /volumes - init-containers
-
-      ## volumes - mysql
+      # volumes - mysql
       - name: mysql-conf
         configMap:
           name: mysql-conf
           items:
           - key: my.cnf
             path: my.cnf
-      ## /volumes - mysql
+      # /volumes - mysql
 
-      ## volumes - mysql + polycube + metricbeat
+      # volumes - mysql + polycube + metricbeat
       - name: proc
         hostPath:
           path: /proc
-      ## /volumes - mysql + polycube + metricbeat
+      # /volumes - mysql + polycube + metricbeat
 
-      ## volumes - mysql + metricbeat
+      # volumes - mysql + metricbeat
       - name: cgroup
         hostPath:
           path: /sys/fs/cgroup
-      ## /volumes - mysql + metricbeat
+      # /volumes - mysql + metricbeat
 
-      ## volumes - polycube
+      # volumes - polycube
       - name: lib-modules
         hostPath:
           path: /lib/modules
@@ -140,9 +135,11 @@ spec:
       - name: netns
         hostPath:
           path: /var/run/netns
-        ## /volumes - polycube
+        # /volumes - polycube
 
-      ## volumes- metricbeat
+      # volumes- metricbeat
+      - name: mysql-metricbeat-modules
+        emptyDir: {}
       - name: mysql-metricbeat-config
         configMap:
           name: mysql-metricbeat
@@ -157,9 +154,9 @@ spec:
             path: mysql.yml
           - key: system.yml
             path: system.yml
-      ## /volumes - metricbeat
+      # /volumes - metricbeat
 
-      ## volumes - logstash
+      # volumes - logstash
       - name: mysql-logstash
         configMap:
           name: mysql-logstash
@@ -176,4 +173,4 @@ spec:
           items:
           - key: mysql-system.conf
             path: mysql-system.conf
-      ## /volumes - logstash
+      # /volumes - logstash

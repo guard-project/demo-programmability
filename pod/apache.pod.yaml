@@ -16,7 +16,7 @@ spec:
         app: apache
     spec:
       containers:
-      ## container - apache
+      # container - apache
       - name: apache
         image: httpd
         ports:
@@ -31,9 +31,9 @@ spec:
           mountPath: /proc
         - name: cgroup
           mountPath: /sys/fs/cgroup
-      ## /container  - apache
+      # /container  - apache
 
-      ## container - polycube
+      # container - polycube
       - name: polycubed
         image: polycubenetwork/polycube:latest
         command: ["polycubed", "--loglevel=DEBUG", "--addr=0.0.0.0", "--logfile=/host/var/log/pcn_k8s"]
@@ -54,9 +54,9 @@ spec:
           - name: polycubed
             containerPort: 9000
         terminationMessagePolicy: FallbackToLogsOnError
-      ## /container  - polycube
+      # /container  - polycube
 
-      ## container - filebeat
+      # container - filebeat
       - name: filebeat
         image: docker.elastic.co/beats/filebeat:6.8.0
         securityContext:
@@ -75,9 +75,9 @@ spec:
           mountPath: /usr/share/filebeat/config/
         - name: apache-log
           mountPath: /var/log/apache2/
-      ## /container - filebeat
+      # /container - filebeat
 
-      ## container - metricbeat
+      # container - metricbeat
       - name: metricbeat
         image: docker.elastic.co/beats/metricbeat:6.8.1
         args: ["-c", "/usr/share/metricbeat/config/metricbeat.yml"]
@@ -98,9 +98,9 @@ spec:
           mountPath: /proc
         - name: cgroup
           mountPath: /sys/fs/cgroup
-      ## /container - metricbeat
+      # /container - metricbeat
 
-      ## container - logstash
+      # container - logstash
       - name: logstash
         image: docker.elastic.co/logstash/logstash:6.8.0
         securityContext:
@@ -113,17 +113,10 @@ spec:
             mountPath: /usr/share/logstash/config/
           - name: apache-logstash-conf
             mountPath: /usr/share/logstash/pipeline/
-      ## /container - logstash
+      # /container - logstash
 
       volumes:
-      ## volumes - init-containers
-      - name: apache-filebeat-config
-        emptyDir: {}
-      - name: apache-metricbeat-modules
-        emptyDir: {}
-      ## /volumes - init-containers
-
-      ## volumes - apache
+      # volumes - apache
       - name: apache-conf
         configMap:
           name: apache-conf
@@ -133,21 +126,21 @@ spec:
       - name: apache-log
         hostPath:
           path: /var/log/apache2
-      ## /volumes - apache + filebeat
+      # /volumes - apache + filebeat
 
-      ## volumes - apache + polycube + metricbeat
+      # volumes - apache + polycube + metricbeat
       - name: proc
         hostPath:
           path: /proc
-      ## /volumes - apache + polycube + metricbeat
+      # /volumes - apache + polycube + metricbeat
 
-      ## volumes - apache + metricbeat
+      # volumes - apache + metricbeat
       - name: cgroup
         hostPath:
           path: /sys/fs/cgroup
-      ## /volumes - apache + metricbeat
+      # /volumes - apache + metricbeat
 
-      ## volumes - polycube
+      # volumes - polycube
       - name: log
         hostPath:
           path: /var/log
@@ -166,24 +159,26 @@ spec:
       - name: netns
         hostPath:
           path: /var/run/netns
-        ## /volumes - polycube
+        # /volumes - polycube
 
-      ## volumes - filebeat
+      # volumes - filebeat
       - name: apache-filebeat
         configMap:
           name: apache-filebeat
           items:
           - key: filebeat.yml
             path: filebeat.yml
-      - name: apache-filebeat-log
+      - name: apache-filebeat-config
         configMap:
           name: apache-filebeat
           items:
           - key: log.yml
             path: log.yml
-      ## /volumes- filebeat
+      # /volumes - filebeat
 
-      ## volumes- metricbeat
+      # volumes - metricbeat
+      - name: apache-metricbeat-modules
+        emptyDir: {}
       - name: apache-metricbeat-config
         configMap:
           name: apache-metricbeat
@@ -196,9 +191,9 @@ spec:
           items:
           - key: system.yml
             path: system.yml
-      ## /volumes - metricbeat
+      # /volumes - metricbeat
 
-      ## volumes - logstash
+      # volumes - logstash
       - name: apache-logstash
         configMap:
           name: apache-logstash
@@ -217,4 +212,4 @@ spec:
             path: apache.conf
           - key: system.conf
             path: system.conf
-      ## /volumes - logstash
+      # /volumes - logstash
