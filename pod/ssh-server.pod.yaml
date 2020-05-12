@@ -18,13 +18,13 @@ spec:
       containers:
       # container - ssh-server
       - name: ssh-server
-        image: rastasheep/ubuntu-sshd
+        image: ubuntu
         ports:
         - containerPort: 22
         lifecycle:
           postStart:
             exec:
-              command: ["apt-get", "install", "hping3", "-y"]
+              command: ["apt-get", "install", "hping3", "openssh-server", "-y"]
         volumeMounts:
         - name: proc
           mountPath: /proc

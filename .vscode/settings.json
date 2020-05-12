@@ -6,12 +6,16 @@
         "busybox",
         "filebeat",
         "guardproject",
+        "hping",
         "keystore",
         "kibana",
+        "logfile",
         "metricbeat",
         "mkdir",
         "netns",
+        "openssh",
         "polycube",
+        "polycubed",
         "synflood"
     ]
 }
