@@ -1,11 +1,11 @@
 {
-  "mappings": {
-    "doc": {
-      "properties": {
-          "LastUpdate": {
-              "type": "date"
-          }
-      }
+    "mappings": {
+        "doc": {
+            "properties": {
+                "LastUpdate": {
+                    "type": "date"
+                }
+            }
+        }
     }
-  }
 }

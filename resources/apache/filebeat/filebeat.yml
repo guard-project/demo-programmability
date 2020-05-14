@@ -16,6 +16,6 @@ processors:
   - add_cloud_metadata: ~
 
 logging:
-  level: info
+  level: debug
   selectors: ["*"]
   metrics.enabled: false

@@ -16,6 +16,43 @@ spec:
         app: mysql
     spec:
       containers:
+      # container - lcp
+      # - name: lcp
+      #   image: guardproject/lcp:latest
+      #   env:
+      #   - name: LCP_GIT_URL
+      #     value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/lcp"
+      #   - name: LCP_ROOT
+      #     value: "/root/lcp"
+      #   - name: HOST
+      #     value: "0.0.0.0"
+      #   - name: PORT
+      #     value: "4000"
+      #   - name: DEV_USERNAME
+      #     value: "lcp"
+      #   - name: DEV_PASSWORD
+      #     value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
+      #   - name: LOG_LEVEL
+      #     value: "DEBUG"
+      #   - name: FORCE_APT_UPGRADE_BOOT
+      #     value: "no"
+      #   - name: FORCE_REBUILD_BOOT
+      #     value: "no"
+      #   - name: USE_ENV_CONFIG_FILES
+      #     value: "yes"
+      #   ports:
+      #   - containerPort: 4000
+      #   volumeMounts:
+      #   - name: mysql-metricbeat-config
+      #     mountPath: /root/metricbeat/config/
+      #   - name: mysql-metricbeat-modules
+      #     mountPath: /root/metricbeat/modules.d/
+      #   - name: mysql-logstash
+      #     mountPath: /root/logstash/config/
+      #   - name: mysql-logstash-conf
+      #     mountPath: /root/logstash/pipeline/
+      # /container - lcp
+
       # container - mysql
       - name: mysql
         image: mysql:5.7
@@ -138,15 +175,13 @@ spec:
         # /volumes - polycube
 
       # volumes- metricbeat
-      - name: mysql-metricbeat-modules
-        emptyDir: {}
       - name: mysql-metricbeat-config
         configMap:
           name: mysql-metricbeat
           items:
           - key: metricbeat.yml
             path: metricbeat.yml
-      - name: mysql-metricbeat
+      - name: mysql-metricbeat-modules
         configMap:
           name: mysql-metricbeat
           items:

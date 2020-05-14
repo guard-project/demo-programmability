@@ -14,6 +14,46 @@ spec:
         app: context-broker
     spec:
       containers:
+      # container - cb-manager
+      # - name: cb-manager
+      #   image: guardproject/cb-manager:latest
+      #   env:
+      #   - name: CB_MANAGER_GIT_URL
+      #     value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/cb-manager"
+      #   - name: CB_MANAGER_ROOT
+      #     value: "/root/cb-manager"
+      #   - name: HOST
+      #     value: "0.0.0.0"
+      #   - name: PORT
+      #     value: "5000"
+      #   - name: DEV_USERNAME
+      #     value: "cb-manager"
+      #   - name: DEV_PASSWORD
+      #     value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
+      #   - name: ELASTICSEARCH_HOST
+      #     value: "elasticsearch-service"
+      #   - name: ELASTICSEARCH_PORT
+      #     value: "9200"
+      #   - name: ELASTICSEARCH_RETRY_PERIOD
+      #     value: "1min"
+      #   - name: ELASTICSEARCH_TIMEOUT
+      #     value: "20s"
+      #   - name: HEARTBEAT_PERIOD
+      #     value: "1min"
+      #   - name: HEARTBEAT_TIMEOUT
+      #     value: "20s"
+      #   - name: LOG_LEVEL
+      #     value: "DEBUG"
+      #   - name: FORCE_APT_UPGRADE_BOOT
+      #     value: "no"
+      #   - name: FORCE_REBUILD_BOOT
+      #     value: "no"
+      #   - name: USE_ENV_CONFIG_FILES
+      #     value: "yes"
+      #   ports:
+      #   - containerPort: 5000
+      # /container - cb-manager
+
       # container - zookeeper
       - name: zookeeper
         image: digitalwonderland/zookeeper
@@ -41,8 +81,22 @@ spec:
         - name: KAFKA_BROKER_ID
           value: "0"
         - name: KAFKA_CREATE_TOPICS
-          value: "polycube:1:1,mysql:1:1,apache:1:1,system:1:1"
+          value: "ssh-server:1:1,mysql:1:1,apache:1:1,system:1:1"
       # /container - kafka
+
+      # container - kafka-web-gui
+      # - name: kafka-web-gui
+      #   image: obsidiandynamics/kafdrop
+      #   ports:
+      #   - containerPort: 9000
+      #   env:
+      #   - name: KAFKA_BROKERCONNECT
+      #     value: "kafka-service:9092"
+      #   - name: JVM_OPTS
+      #     value: "-Xms32M -Xmx64M"
+      #   - name: SERVER_SERVLET_CONTEXTPATH
+      #     value: "/"
+      # /container - kafka-web-gui
 
       # container - logstash
       - name: logstash

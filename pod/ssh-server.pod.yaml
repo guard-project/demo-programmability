@@ -16,15 +16,52 @@ spec:
         app: ssh-server
     spec:
       containers:
+      # # container - lcp
+      # - name: lcp
+      #   image: guardproject/lcp:latest
+      #   env:
+      #   - name: LCP_GIT_URL
+      #     value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/lcp"
+      #   - name: LCP_ROOT
+      #     value: "/root/lcp"
+      #   - name: HOST
+      #     value: "0.0.0.0"
+      #   - name: PORT
+      #     value: "4000"
+      #   - name: DEV_USERNAME
+      #     value: "lcp"
+      #   - name: DEV_PASSWORD
+      #     value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
+      #   - name: LOG_LEVEL
+      #     value: "DEBUG"
+      #   - name: FORCE_APT_UPGRADE_BOOT
+      #     value: "no"
+      #   - name: FORCE_REBUILD_BOOT
+      #     value: "no"
+      #   - name: USE_ENV_CONFIG_FILES
+      #     value: "yes"
+      #   securityContext:
+      #     runAsUser: 0
+      #   ports:
+      #   - containerPort: 4000
+      #   volumeMounts:
+      #   - name: ssh-server-cubebeat-config
+      #     mountPath: /root/cubebeat/config.d/
+      #   - name: ssh-server-metricbeat-config
+      #     mountPath: /root/metricbeat/config/
+      #   - name: ssh-server-metricbeat-modules
+      #     mountPath: /root/metricbeat/modules.d/
+      #   - name: ssh-server-logstash
+      #     mountPath: /root/logstash/config/
+      #   - name: ssh-server-logstash-conf
+      #     mountPath: /root/logstash/pipeline/
+      # /container - lcp
+
       # container - ssh-server
       - name: ssh-server
-        image: ubuntu
+        image: anthonyneto/sshserver
         ports:
         - containerPort: 22
-        lifecycle:
-          postStart:
-            exec:
-              command: ["apt-get", "install", "hping3", "openssh-server", "-y"]
         volumeMounts:
         - name: proc
           mountPath: /proc
@@ -39,7 +76,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "sleep 30; /usr/local/bin/polycubectl synflood add synflood1"]
+              command: ["/bin/sh", "-c", "sleep 30; /usr/local/bin/polycubectl synflood add sf"]
         volumeMounts:
         - name: lib-modules
           mountPath: /lib/modules
@@ -62,6 +99,27 @@ spec:
       # container - cubebeat
       - name: cubebeat
         image: guardproject/cubebeat:latest
+        env:
+        - name: CUBEBEAT_GIT_URL
+          value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/cubebeat"
+        - name: CUBEBEAT_ROOT
+          value: "src/gitlab.com/guard-repositories/cubebeat"
+        - name: LOGSTASH_HOST
+          value: "localhost"
+        - name: LOGSTASH_PORT
+          value: "5044"
+        - name: RELOAD_PERIOD
+          value: "10s"
+        - name: GOPATH
+          value: "/root/go"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: FORCE_APT_UPGRADE_BOOT
+          value: "no"
+        - name: FORCE_REBUILD_BOOT
+          value: "no"
+        - name: USE_ENV_CONFIG_FILES
+          value: "yes"
         securityContext:
           runAsUser: 0
         resources:
@@ -71,10 +129,8 @@ spec:
             cpu: 100m
             memory: 100Mi
         volumeMounts:
-        - name: ssh-server-cubebeat
-          mountPath: /root/config/
         - name: ssh-server-cubebeat-config
-          mountPath: $CUBEBEAT_ROOT/config.d/
+          mountPath: /root/go/src/gitlab.com/guard-repositories/cubebeat/config.d/
       # /container - cubebeat
 
       # container - metricbeat
@@ -104,8 +160,8 @@ spec:
       - name: logstash
         image: docker.elastic.co/logstash/logstash:6.8.1
         ports:
+        - containerPort: 5044
         - containerPort: 5144
-        - containerPort: 5244
         volumeMounts:
           - name: ssh-server-logstash
             mountPath: /usr/share/logstash/config/
@@ -152,26 +208,18 @@ spec:
         configMap:
           name: ssh-server-cubebeat
           items:
-          - key: cubebeat.yml
-            path: cubebeat.yml
-      - name: ssh-server-cubebeat
-        configMap:
-          name: ssh-server-cubebeat
-          items:
             - key: synflood.yml
               path: synflood.yml
       # /volumes - cubebeat
 
       # volumes - metricbeat
-      - name: ssh-server-metricbeat-modules
-        emptyDir: {}
       - name: ssh-server-metricbeat-config
         configMap:
           name: ssh-server-metricbeat
           items:
           - key: metricbeat.yml
             path: metricbeat.yml
-      - name: ssh-server-metricbeat
+      - name: ssh-server-metricbeat-modules
         configMap:
           name: ssh-server-metricbeat
           items:
