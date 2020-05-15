@@ -3,4 +3,4 @@ path:
   logs: /usr/share/logstash/log
 
 log:
-  level: debug
+  level: info

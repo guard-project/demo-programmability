@@ -60,7 +60,7 @@ function usage {
     init_done=0
     echo -e "Waiting to initialize $pod\c"
     while [ $init_done -eq 0 ]; do
-        k8s exec deploy/$pod -c $container -- $cmd localhost:$target  > /dev/null 2> /dev/null && init_done=1
+        k8s exec deploy/$pod -c $container -- $cmd localhost:$target > /dev/null 2> /dev/null && init_done=1
         if [ $init_done -eq 0 ]; then
             echo -e ".\c"
             sleep $seconds

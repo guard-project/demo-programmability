@@ -1,81 +1,112 @@
 function k8s-start {
     function usage {
-        echo "Usage: k8s-start [ -h ] [ -r ]"
+        echo "Usage: k8s-start [ -h ] [ -v 6.8.1|7.0.1 ] [ -s ] [ -c ] [ -p ] [ -e ]"
     }
 
     OPTIND=1
-    reset=0
-    while getopts "hr" opt; do
+    unset elk_version
+    reset_storage=0
+    reset_configmap=0
+    reset_pod=0
+    reset_service=0
+    while getopts "hv:scp" opt; do
         case "$opt" in
             h)  usage
-                  return 0
+                return 0
                 ;;
-            r)  k8s-reset
+            v)  elk_version=$OPTARG
+                ;;
+            s)  reset_storage=1
+                ;;
+            c)  reset_configmap=1
+                ;;
+            p)  reset_pod=1
+                ;;
+            e)  reset_service=1
                 ;;
             *)  usage
                 return 1
         esac
     done
 
+    if [ -z "$elk_version" ]; then
+        echo Error: missing ELK version. It can be: 6.8.1 or 7.0.1.
+        usage
+        return 1
+    fi
+
     echo Namespace
     kubectl apply -f namespace
     echo
 
-    echo Storage
-    k8s apply -f storage
+    echo Delete old deployments
+    k8s delete deployments --all
     echo
 
-    echo Map
-    # apache
-    k8s create configmap apache-conf --from-file=$APACHE_DIR/apache/conf/httpd.conf
-    k8s create configmap apache-filebeat --from-file=$APACHE_DIR/filebeat/filebeat.yml \
-                                            --from-file=$APACHE_DIR/filebeat/config/log.yml
-    k8s create configmap apache-metricbeat --from-file=$APACHE_DIR/metricbeat/metricbeat.yml \
-                                              --from-file=$APACHE_DIR/metricbeat/modules.d/system.yml
-    k8s create configmap apache-logstash --from-file=$APACHE_DIR/logstash/logstash.yml \
-                                            --from-file=$APACHE_DIR/logstash/pipelines.yml \
-                                            --from-file=$APACHE_DIR/logstash/log4j2.properties \
-                                            --from-file=$APACHE_DIR/logstash/conf.d/apache.conf \
-                                            --from-file=$APACHE_DIR/logstash/conf.d/system.conf
-    # mysql
-    k8s create configmap mysql-conf --from-file=$MYSQL_DIR/mysql/my.cnf
-    k8s create configmap mysql-metricbeat --from-file=$MYSQL_DIR/metricbeat/metricbeat.yml \
-                                             --from-file=$MYSQL_DIR/metricbeat/modules.d/mysql.yml \
-                                             --from-file=$MYSQL_DIR/metricbeat/modules.d/system.yml
-    k8s create configmap mysql-logstash --from-file=$MYSQL_DIR/logstash/logstash.yml \
-                                            --from-file=$MYSQL_DIR/logstash/pipelines.yml \
-                                            --from-file=$MYSQL_DIR/logstash/log4j2.properties \
-                                            --from-file=$MYSQL_DIR/logstash/conf.d/mysql-system.conf
-    # ssh-server
-    k8s create configmap ssh-server-cubebeat --from-file=$SSH_SERVER_DIR/cubebeat/config.d/synflood.yml
-    k8s create configmap ssh-server-metricbeat --from-file=$SSH_SERVER_DIR/metricbeat/metricbeat.yml \
-                                               --from-file=$SSH_SERVER_DIR/metricbeat/modules.d/system.yml
-    k8s create configmap ssh-server-logstash --from-file=$SSH_SERVER_DIR/logstash/logstash.yml \
-                                                --from-file=$SSH_SERVER_DIR/logstash/pipelines.yml \
-                                                --from-file=$SSH_SERVER_DIR/logstash/log4j2.properties \
-                                                --from-file=$SSH_SERVER_DIR/logstash/conf.d/ssh-server.conf \
-                                                --from-file=$SSH_SERVER_DIR/logstash/conf.d/system.conf
-    # context-broker
-    k8s create configmap context-broker-logstash --from-file=$CONTEXT_BROKER_DIR/logstash/logstash.yml \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/pipelines.yml \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/log4j2.properties \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/apache.conf \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/mysql.conf \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/ssh-server.conf \
-                                                    --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/system.conf
-    k8s create configmap context-broker-elasticsearch --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch.keystore \
-                                                         --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch.yml \
-                                                         --from-file=$CONTEXT_BROKER_DIR/elasticsearch/jvm.options \
-                                                         --from-file=$CONTEXT_BROKER_DIR/elasticsearch/log4j2.properties
-    k8s create configmap context-broker-kibana --from-file=$CONTEXT_BROKER_DIR/kibana/kibana.yml
-    echo
+    if [ $reset_storage -eq 1 ]; then
+        echo Storage
+        k8s delete pvc --all
+        k8s delete pv --all
+        k8s apply -f storage/elasticsearch-$elk_version.storage.yaml
+        k8s apply -f storage/kibana-$elk_version.storage.yaml
+        echo
+    fi
 
-    echo Service
-    k8s apply -f service
-    echo
+    if [ $reset_configmap -eq 1 ]; then
+        echo Map
+        k8s delete configmap --all
+        # apache
+        k8s create configmap apache-conf --from-file=$APACHE_DIR/apache/conf/httpd.conf
+        k8s create configmap apache-filebeat --from-file=$APACHE_DIR/filebeat/filebeat.yml \
+                                                --from-file=$APACHE_DIR/filebeat/config/log.yml
+        k8s create configmap apache-metricbeat --from-file=$APACHE_DIR/metricbeat/metricbeat.yml \
+                                                --from-file=$APACHE_DIR/metricbeat/modules.d/system.yml
+        k8s create configmap apache-logstash --from-file=$APACHE_DIR/logstash/logstash.yml \
+                                                --from-file=$APACHE_DIR/logstash/pipelines.yml \
+                                                --from-file=$APACHE_DIR/logstash/log4j2.properties \
+                                                --from-file=$APACHE_DIR/logstash/conf.d/apache.conf \
+                                                --from-file=$APACHE_DIR/logstash/conf.d/system.conf
+        # mysql
+        k8s create configmap mysql-conf --from-file=$MYSQL_DIR/mysql/my.cnf
+        k8s create configmap mysql-metricbeat --from-file=$MYSQL_DIR/metricbeat/metricbeat.yml \
+                                                --from-file=$MYSQL_DIR/metricbeat/modules.d/mysql.yml \
+                                                --from-file=$MYSQL_DIR/metricbeat/modules.d/system.yml
+        k8s create configmap mysql-logstash --from-file=$MYSQL_DIR/logstash/logstash.yml \
+                                                --from-file=$MYSQL_DIR/logstash/pipelines.yml \
+                                                --from-file=$MYSQL_DIR/logstash/log4j2.properties \
+                                                --from-file=$MYSQL_DIR/logstash/conf.d/mysql-system.conf
+        # ssh-server
+        k8s create configmap ssh-server-cubebeat --from-file=$SSH_SERVER_DIR/cubebeat/config.d/synflood.yml
+        k8s create configmap ssh-server-metricbeat --from-file=$SSH_SERVER_DIR/metricbeat/metricbeat.yml \
+                                                --from-file=$SSH_SERVER_DIR/metricbeat/modules.d/system.yml
+        k8s create configmap ssh-server-logstash --from-file=$SSH_SERVER_DIR/logstash/logstash.yml \
+                                                    --from-file=$SSH_SERVER_DIR/logstash/pipelines.yml \
+                                                    --from-file=$SSH_SERVER_DIR/logstash/log4j2.properties \
+                                                    --from-file=$SSH_SERVER_DIR/logstash/conf.d/ssh-server.conf \
+                                                    --from-file=$SSH_SERVER_DIR/logstash/conf.d/system.conf
+        # context-broker
+        k8s create configmap context-broker-logstash --from-file=$CONTEXT_BROKER_DIR/logstash/logstash.yml \
+                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/pipelines.yml \
+                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/log4j2.properties \
+                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/apache.conf \
+                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/mysql.conf \
+                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/ssh-server.conf \
+                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/system.conf
+        k8s create configmap context-broker-elasticsearch --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch-$elk_version.yml \
+                                                          --from-file=$CONTEXT_BROKER_DIR/elasticsearch/log4j2.properties
+        k8s create configmap context-broker-kibana --from-file=$CONTEXT_BROKER_DIR/kibana/kibana.yml
+        echo
+    fi
+
+    if [ $reset_service -eq 1 ]; then
+        echo Service
+        k8s delete configmap --all
+        k8s apply -f service
+        echo
+    fi
 
     echo Context broker
-    k8s apply -f pod/context-broker.pod.yaml
+    k8s apply -f pod/context-broker-$elk_version.pod.yaml
     wait-done -p context-broker -c elasticsearch -t 9200 -s 2
     k8s-pod-vars -p context-broker
     echo POD context-broker=$context_broker
@@ -87,20 +118,20 @@ function k8s-start {
     k8s exec deploy/context-broker -c elasticsearch -- curl -XPUT -d "@fix-index.json" -H 'Content-Type:application/json' localhost:9200/ssh-server
     echo
 
-    echo Kibana Update
-    k8s cp -c kibana $RESOURCES_DIR/context-broker/kibana/kibana-milestones-vis-6.8.1.zip $context_broker:/usr/share/kibana/resources/kibana-milestones-vis-6.8.1.zip
-    k8s cp -c kibana $RESOURCES_DIR/context-broker/kibana/datasweet_formula-2.1.2_kibana-6.8.1.zip $context_broker:/usr/share/kibana/resources/datasweet_formula-2.1.2_kibana-6.8.1.zip
-    k8s exec deploy/context-broker -c kibana -- bin/kibana-plugin install file:///usr/share/kibana/resources/kibana-milestones-vis-6.8.1.zip
-    k8s exec deploy/context-broker -c kibana -- bin/kibana-plugin install file:///usr/share/kibana/resources/datasweet_formula-2.1.2_kibana-6.8.1.zip
-    echo
+    # echo Kibana Update
+    k8s cp -c kibana $RESOURCES_DIR/context-broker/kibana/kibana-milestones-vis-$elk_version.zip $context_broker:/usr/share/kibana/resources/kibana-milestones-vis-$elk_version.zip
+    k8s cp -c kibana $RESOURCES_DIR/context-broker/kibana/datasweet_formula-2.1.2_kibana-$elk_version.zip $context_broker:/usr/share/kibana/resources/datasweet_formula-2.1.2_kibana-$elk_version.zip
+    k8s exec deploy/context-broker -c kibana -- bin/kibana-plugin install file:///usr/share/kibana/resources/kibana-milestones-vis-$elk_version.zip
+    k8s exec deploy/context-broker -c kibana -- bin/kibana-plugin install file:///usr/share/kibana/resources/datasweet_formula-2.1.2_kibana-$elk_version.zip
+    # echo
 
     echo Execution Environments
     echo - Apache
-    k8s apply -f pod/apache.pod.yaml
+    k8s apply -f pod/apache-$elk_version.pod.yaml
     echo - MySQL
-    k8s apply -f pod/mysql.pod.yaml
+    k8s apply -f pod/mysql-$elk_version.pod.yaml
     echo - SSH-Server
-    k8s apply -f pod/ssh-server.pod.yaml
+    k8s apply -f pod/ssh-server-$elk_version.pod.yaml
     echo
 
     wait-done -p apache -c filebeat -t 80 -s 2
@@ -109,14 +140,11 @@ function k8s-start {
 
     wait-done -p ssh-server -c ssh-server -n -t 22 -s 2
     k8s exec deploy/ssh-server -c ssh-server -- apk add hping3 --update-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing
-
-    echo "Open kibana at http::/localhost:5061"
-    k8s-frwd -t kibana
 }
 
 function k8s-frwd {
     function usage {
-        echo "Usage: k8s-frwd [ -h ] [ -t elastic|kibana|polycube ]"
+        echo "Usage: k8s-frwd [ -h ] [ -t cb-manager|kibana|elasticsearch ]"
     }
 
     OPTIND=1
@@ -128,18 +156,18 @@ function k8s-frwd {
                 ;;
             t)  target=$OPTARG
                 case "$target" in
-                    "elastic")  port=9200
-                                pod=context-broker
-                                ;;
-                    "kibana")   port=5601
-                                pod=context-broker
-                                ;;
-                    "polycube") port=9000
-                                pod=ssh-server
-                                ;;
-                    *)          echo Error: wrong argument for -s.
-                                usage
-                                return 1
+                    "kibana")        port=5601
+                                     pod=context-broker
+                                     ;;
+                    "cb-manager")    port=5000
+                                     pod=context-broker
+                                     ;;
+                    "elasticsearch") port=9200
+                                     pod=context-broker
+                                     ;;
+                    *)               echo Error: wrong argument for -s.
+                                     usage
+                                     return 1
                 esac
                 ;;
             ?)  echo Error: -$OPTARG requires an argument.
@@ -152,7 +180,7 @@ function k8s-frwd {
     done
 
     if [ -z "$target" ]; then
-        echo Error: missing target: elastic, polycube or kibana.
+        echo Error: missing target: cb-manager or kibana.
         usage
         return 1
     fi
@@ -203,29 +231,6 @@ function k8s-pod-vars {
     rm -rf ~*.tmp
 }
 
-function k8s-reset {
-    echo Pods / Deployments
-    k8s delete deployments --all
-    echo
-
-    echo Services
-    k8s delete services --all
-    echo
-
-    echo Map
-    k8s delete configmap --all
-    echo
-
-    echo Storage
-    k8s delete pvc --all
-    k8s delete pv --all
-    echo
-
-    echo Namespace
-    kubectl delete namespace guard-kube
-    echo
-}
-
 function k8s-shell {
     function usage {
         echo "Usage: k8s-shell [ -h ] [ -p <pod> -c <container> ] [ -s <shell-command-path> ]"
@@ -268,4 +273,42 @@ function k8s-shell {
     fi
 
     k8s exec $pod -c $container -it -- $shell
+}
+
+function k8s-log-level {
+    function usage {
+        echo "Usage: k8s-log-level [ -h ] [ -l <log-level> ]"
+    }
+
+    OPTIND=1
+    unset log_level
+    while getopts "hl:" opt; do
+        case "$opt" in
+            h)  usage
+                return 0
+                ;;
+            l)  log_level=$OPTARG
+                ;;
+            ?)  echo Error: -$OPTARG requires an argument.
+                usage
+                return 1
+                ;;
+            *)  usage
+                return 1
+        esac
+    done
+
+    if [ -z "$log_level" ]; then
+        echo Error: missing log-level.
+        usage
+        return 1
+    fi
+
+    find $RESOURCES_DIR -type f -name '*.yml' -exec sed -i "s/level:.*/level: $log_level/g" {} \;
+}
+
+function k8s-pod-node {
+    kubectl apply -f namespace/guard.namespace.yaml
+    k8s delete pod node
+    k8s apply -f node/node.pod.yaml
 }

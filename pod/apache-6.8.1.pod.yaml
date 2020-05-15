@@ -16,48 +16,6 @@ spec:
         app: apache
     spec:
       containers:
-      # container - lcp
-      # - name: lcp
-      #   image: guardproject/lcp:latest
-      #   env:
-      #   - name: LCP_GIT_URL
-      #     value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/lcp"
-      #   - name: LCP_ROOT
-      #     value: "/root/lcp"
-      #   - name: HOST
-      #     value: "0.0.0.0"
-      #   - name: PORT
-      #     value: "4000"
-      #   - name: DEV_USERNAME
-      #     value: "lcp"
-      #   - name: DEV_PASSWORD
-      #     value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
-      #   - name: LOG_LEVEL
-      #     value: "DEBUG"
-      #   - name: FORCE_APT_UPGRADE_BOOT
-      #     value: "no"
-      #   - name: FORCE_REBUILD_BOOT
-      #     value: "no"
-      #   - name: USE_ENV_CONFIG_FILES
-      #     value: "yes"
-      #   ports:
-      #   - containerPort: 4000
-      #   volumeMounts:
-      #   - name: apache-filebeat
-      #     mountPath: /root/filebeat/filebeat.yml
-      #     subPath: filebeat.yml
-      #   - name: apache-filebeat-config
-      #     mountPath: /root/filebeat/config/
-      #   - name: apache-metricbeat-config
-      #     mountPath: /root/metricbeat/config/
-      #   - name: apache-metricbeat-modules
-      #     mountPath: /root/metricbeat/modules.d/
-      #   - name: apache-logstash
-      #     mountPath: /root/logstash/config/
-      #   - name: apache-logstash-conf
-      #     mountPath: /root/logstash/pipeline/
-      # /container - lcp
-
       # container - apache
       - name: apache
         image: httpd
@@ -75,32 +33,9 @@ spec:
           mountPath: /sys/fs/cgroup
       # /container  - apache
 
-      # container - polycube
-      - name: polycubed
-        image: polycubenetwork/polycube:latest
-        command: ["polycubed", "--loglevel=DEBUG", "--addr=0.0.0.0", "--logfile=/host/var/log/pcn_k8s"]
-        volumeMounts:
-        - name: lib-modules
-          mountPath: /lib/modules
-        - name: usr-src
-          mountPath: /usr/src
-        - name: cni-path
-          mountPath: /host/opt/cni/bin
-        - name: etc-cni-netd
-          mountPath: /host/etc/cni/net.d
-        - name: log
-          mountPath: /host/var/log
-        securityContext:
-          privileged: true
-        ports:
-          - name: polycubed
-            containerPort: 9000
-        terminationMessagePolicy: FallbackToLogsOnError
-      # /container  - polycube
-
       # container - filebeat
       - name: filebeat
-        image: docker.elastic.co/beats/filebeat:6.8.0
+        image: docker.elastic.co/beats/filebeat:6.8.1
         securityContext:
           runAsUser: 0
         resources:
@@ -157,6 +92,23 @@ spec:
             mountPath: /usr/share/logstash/pipeline/
       # /container - logstash
 
+      initContainers:
+      - name: copy
+        image: busybox
+        command: ["sh", "-c"]
+        args:
+        - "cp /apache-filebeat-config-data/* /apache-filebeat-config/;"
+        - "cp /apache-metricbeat-modules-data/* /apache-metricbeat-modules/"
+        volumeMounts:
+        - name: apache-filebeat-config
+          mountPath: /apache-filebeat-config
+        - name: apache-filebeat-config-data
+          mountPath: /apache-filebeat-config-data
+        - name: apache-metricbeat-modules
+          mountPath: /apache-metricbeat-modules
+        - name: apache-metricbeat-modules-data
+          mountPath: /apache-metricbeat-modules-data
+
       volumes:
       # volumes - apache
       - name: apache-conf
@@ -170,38 +122,14 @@ spec:
           path: /var/log/apache2
       # /volumes - apache + filebeat
 
-      # volumes - apache + polycube + metricbeat
+      # volumes - apache + metricbeat
       - name: proc
         hostPath:
           path: /proc
-      # /volumes - apache + polycube + metricbeat
-
-      # volumes - apache + metricbeat
       - name: cgroup
         hostPath:
           path: /sys/fs/cgroup
       # /volumes - apache + metricbeat
-
-      # volumes - polycube
-      - name: log
-        hostPath:
-          path: /var/log
-      - name: lib-modules
-        hostPath:
-          path: /lib/modules
-      - name: usr-src
-        hostPath:
-          path: /usr/src
-      - name: cni-path
-        hostPath:
-          path: /opt/cni/bin
-      - name: etc-cni-netd
-        hostPath:
-          path: /etc/cni/net.d
-      - name: netns
-        hostPath:
-          path: /var/run/netns
-        # /volumes - polycube
 
       # volumes - filebeat
       - name: apache-filebeat
@@ -211,6 +139,8 @@ spec:
           - key: filebeat.yml
             path: filebeat.yml
       - name: apache-filebeat-config
+        emptyDir: {}
+      - name: apache-filebeat-config-data
         configMap:
           name: apache-filebeat
           items:
@@ -226,6 +156,8 @@ spec:
           - key: metricbeat.yml
             path: metricbeat.yml
       - name: apache-metricbeat-modules
+        emptyDir: {}
+      - name: apache-metricbeat-modules-data
         configMap:
           name: apache-metricbeat
           items:

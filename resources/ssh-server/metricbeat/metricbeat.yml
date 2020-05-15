@@ -8,7 +8,7 @@ output.logstash:
   hosts: ["localhost:5144"]
 
 logging:
-  level: debug
+  level: info
   selectors: ["*"]
   to_files: true
   files:

@@ -1,0 +1,220 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apache
+  namespace: guard-kube
+  annotations:
+    guard.io/security-components: "[\"firewall\"]"
+spec:
+  selector:
+    matchLabels:
+      app: apache
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: apache
+    spec:
+      containers:
+      # container - lcp
+      - name: lcp
+        image: guardproject/lcp:latest
+        env:
+        - name: LCP_GIT_URL
+          value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/lcp"
+        - name: LCP_ROOT
+          value: "/root/lcp"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "4000"
+        - name: DEV_USERNAME
+          value: "lcp"
+        - name: DEV_PASSWORD
+          value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
+        - name: LOG_LEVEL
+          value: "DEBUG"
+        - name: FORCE_APT_UPGRADE_BOOT
+          value: "no"
+        - name: FORCE_REBUILD_BOOT
+          value: "no"
+        - name: USE_ENV_CONFIG_FILES
+          value: "yes"
+        ports:
+        - containerPort: 4000
+        volumeMounts:
+        - name: apache-filebeat-config
+          mountPath: /root/filebeat/config/
+        - name: apache-metricbeat-modules
+          mountPath: /root/metricbeat/modules.d/
+      # /container - lcp
+
+      # container - apache
+      - name: apache
+        image: httpd
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: apache-conf
+          mountPath: /usr/local/apache2/conf/httpd.conf
+          subPath: httpd.conf
+        - name: apache-log
+          mountPath: /usr/local/apache2/logs
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      # /container  - apache
+
+      # container - filebeat
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:7.0.1
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: apache-filebeat
+          mountPath: /usr/share/filebeat/filebeat.yml
+          subPath: filebeat.yml
+        - name: apache-filebeat-config
+          mountPath: /usr/share/filebeat/config/
+        - name: apache-log
+          mountPath: /var/log/apache2/
+      # /container - filebeat
+
+      # container - metricbeat
+      - name: metricbeat
+        image: docker.elastic.co/beats/metricbeat:7.0.1
+        args: ["-c", "/usr/share/metricbeat/config/metricbeat.yml"]
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: apache-metricbeat-config
+          mountPath: /usr/share/metricbeat/config/
+        - name: apache-metricbeat-modules
+          mountPath: /usr/share/metricbeat/modules.d/
+        - name: proc
+          mountPath: /proc
+        - name: cgroup
+          mountPath: /sys/fs/cgroup
+      # /container - metricbeat
+
+      # container - logstash
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:6.8.0
+        securityContext:
+          runAsUser: 0
+        ports:
+        - containerPort: 5044
+        - containerPort: 5144
+        volumeMounts:
+          - name: apache-logstash
+            mountPath: /usr/share/logstash/config/
+          - name: apache-logstash-conf
+            mountPath: /usr/share/logstash/pipeline/
+      # /container - logstash
+
+      initContainers:
+      - name: copy
+        image: busybox
+        command: ["sh", "-c"]
+        args:
+        - "cp /apache-filebeat-config-data/* /apache-filebeat-config/;"
+        - "cp /apache-metricbeat-modules-data/* /apache-metricbeat-modules/"
+        volumeMounts:
+        - name: apache-filebeat-config
+          mountPath: /apache-filebeat-config
+        - name: apache-filebeat-config-data
+          mountPath: /apache-filebeat-config-data
+        - name: apache-metricbeat-modules
+          mountPath: /apache-metricbeat-modules
+        - name: apache-metricbeat-modules-data
+          mountPath: /apache-metricbeat-modules-data
+
+      volumes:
+      # volumes - apache
+      - name: apache-conf
+        configMap:
+          name: apache-conf
+          items:
+          - key: httpd.conf
+            path: httpd.conf
+      - name: apache-log
+        hostPath:
+          path: /var/log/apache2
+      # /volumes - apache + filebeat
+
+      # volumes - apache + metricbeat
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: cgroup
+        hostPath:
+          path: /sys/fs/cgroup
+      # /volumes - apache + metricbeat
+
+      # volumes - filebeat
+      - name: apache-filebeat
+        configMap:
+          name: apache-filebeat
+          items:
+          - key: filebeat.yml
+            path: filebeat.yml
+      - name: apache-filebeat-config
+        emptyDir: {}
+      - name: apache-filebeat-config-data
+        configMap:
+          name: apache-filebeat
+          items:
+          - key: log.yml
+            path: log.yml
+      # /volumes - filebeat
+
+      # volumes - metricbeat
+      - name: apache-metricbeat-config
+        configMap:
+          name: apache-metricbeat
+          items:
+          - key: metricbeat.yml
+            path: metricbeat.yml
+      - name: apache-metricbeat-modules
+        emptyDir: {}
+      - name: apache-metricbeat-modules-data
+        configMap:
+          name: apache-metricbeat
+          items:
+          - key: system.yml
+            path: system.yml
+      # /volumes - metricbeat
+
+      # volumes - logstash
+      - name: apache-logstash
+        configMap:
+          name: apache-logstash
+          items:
+          - key: logstash.yml
+            path: logstash.yml
+          - key: pipelines.yml
+            path: pipelines.yml
+          - key: log4j2.properties
+            path: log4j2.properties
+      - name: apache-logstash-conf
+        configMap:
+          name: apache-logstash
+          items:
+          - key: apache.conf
+            path: apache.conf
+          - key: system.conf
+            path: system.conf
+      # /volumes - logstash

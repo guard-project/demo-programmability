@@ -16,43 +16,6 @@ spec:
         app: mysql
     spec:
       containers:
-      # container - lcp
-      # - name: lcp
-      #   image: guardproject/lcp:latest
-      #   env:
-      #   - name: LCP_GIT_URL
-      #     value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/lcp"
-      #   - name: LCP_ROOT
-      #     value: "/root/lcp"
-      #   - name: HOST
-      #     value: "0.0.0.0"
-      #   - name: PORT
-      #     value: "4000"
-      #   - name: DEV_USERNAME
-      #     value: "lcp"
-      #   - name: DEV_PASSWORD
-      #     value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
-      #   - name: LOG_LEVEL
-      #     value: "DEBUG"
-      #   - name: FORCE_APT_UPGRADE_BOOT
-      #     value: "no"
-      #   - name: FORCE_REBUILD_BOOT
-      #     value: "no"
-      #   - name: USE_ENV_CONFIG_FILES
-      #     value: "yes"
-      #   ports:
-      #   - containerPort: 4000
-      #   volumeMounts:
-      #   - name: mysql-metricbeat-config
-      #     mountPath: /root/metricbeat/config/
-      #   - name: mysql-metricbeat-modules
-      #     mountPath: /root/metricbeat/modules.d/
-      #   - name: mysql-logstash
-      #     mountPath: /root/logstash/config/
-      #   - name: mysql-logstash-conf
-      #     mountPath: /root/logstash/pipeline/
-      # /container - lcp
-
       # container - mysql
       - name: mysql
         image: mysql:5.7
@@ -70,29 +33,6 @@ spec:
         - name: cgroup
           mountPath: /sys/fs/cgroup
       # /container  - mysql
-
-      # container - polycube
-      - name: polycubed
-        image: polycubenetwork/polycube:latest
-        command: ["polycubed", "--loglevel=DEBUG", "--addr=0.0.0.0", "--logfile=/host/var/log/pcn_k8s"]
-        volumeMounts:
-        - name: lib-modules
-          mountPath: /lib/modules
-        - name: usr-src
-          mountPath: /usr/src
-        - name: cni-path
-          mountPath: /host/opt/cni/bin
-        - name: etc-cni-netd
-          mountPath: /host/etc/cni/net.d
-        - name: var-log
-          mountPath: /host/var/log
-        securityContext:
-          privileged: true
-        ports:
-          - name: polycubed
-            containerPort: 9000
-        terminationMessagePolicy: FallbackToLogsOnError
-      # /container  - polycube
 
       # container - metricbeat
       - name: metricbeat
@@ -131,6 +71,18 @@ spec:
             mountPath: /usr/share/logstash/pipeline/
       # /container - logstash
 
+      initContainers:
+      - name: copy
+        image: busybox
+        command: ["sh", "-c"]
+        args:
+        - "cp /mysql-metricbeat-modules-data/* /mysql-metricbeat-modules/"
+        volumeMounts:
+        - name: mysql-metricbeat-modules
+          mountPath: /mysql-metricbeat-modules
+        - name: mysql-metricbeat-modules-data
+          mountPath: /mysql-metricbeat-modules-data
+
       volumes:
       # volumes - mysql
       - name: mysql-conf
@@ -141,38 +93,14 @@ spec:
             path: my.cnf
       # /volumes - mysql
 
-      # volumes - mysql + polycube + metricbeat
+      # volumes - mysql + metricbeat
       - name: proc
         hostPath:
           path: /proc
-      # /volumes - mysql + polycube + metricbeat
-
-      # volumes - mysql + metricbeat
       - name: cgroup
         hostPath:
           path: /sys/fs/cgroup
       # /volumes - mysql + metricbeat
-
-      # volumes - polycube
-      - name: lib-modules
-        hostPath:
-          path: /lib/modules
-      - name: usr-src
-        hostPath:
-          path: /usr/src
-      - name: cni-path
-        hostPath:
-          path: /opt/cni/bin
-      - name: etc-cni-netd
-        hostPath:
-          path: /etc/cni/net.d
-      - name: var-log
-        hostPath:
-          path: /var/log
-      - name: netns
-        hostPath:
-          path: /var/run/netns
-        # /volumes - polycube
 
       # volumes- metricbeat
       - name: mysql-metricbeat-config
@@ -182,6 +110,8 @@ spec:
           - key: metricbeat.yml
             path: metricbeat.yml
       - name: mysql-metricbeat-modules
+        emptyDir: {}
+      - name: mysql-metricbeat-modules-data
         configMap:
           name: mysql-metricbeat
           items:

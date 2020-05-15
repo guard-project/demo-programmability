@@ -11,7 +11,7 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/mnt/kibana-data"
+    path: "/mnt/kibana-7.0.1-data"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

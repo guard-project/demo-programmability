@@ -9,6 +9,8 @@
         "hping",
         "keystore",
         "kibana",
+        "kube",
+        "kubectl",
         "logfile",
         "metricbeat",
         "mkdir",

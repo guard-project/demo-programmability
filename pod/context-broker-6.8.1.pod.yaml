@@ -14,46 +14,6 @@ spec:
         app: context-broker
     spec:
       containers:
-      # container - cb-manager
-      # - name: cb-manager
-      #   image: guardproject/cb-manager:latest
-      #   env:
-      #   - name: CB_MANAGER_GIT_URL
-      #     value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/cb-manager"
-      #   - name: CB_MANAGER_ROOT
-      #     value: "/root/cb-manager"
-      #   - name: HOST
-      #     value: "0.0.0.0"
-      #   - name: PORT
-      #     value: "5000"
-      #   - name: DEV_USERNAME
-      #     value: "cb-manager"
-      #   - name: DEV_PASSWORD
-      #     value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
-      #   - name: ELASTICSEARCH_HOST
-      #     value: "elasticsearch-service"
-      #   - name: ELASTICSEARCH_PORT
-      #     value: "9200"
-      #   - name: ELASTICSEARCH_RETRY_PERIOD
-      #     value: "1min"
-      #   - name: ELASTICSEARCH_TIMEOUT
-      #     value: "20s"
-      #   - name: HEARTBEAT_PERIOD
-      #     value: "1min"
-      #   - name: HEARTBEAT_TIMEOUT
-      #     value: "20s"
-      #   - name: LOG_LEVEL
-      #     value: "DEBUG"
-      #   - name: FORCE_APT_UPGRADE_BOOT
-      #     value: "no"
-      #   - name: FORCE_REBUILD_BOOT
-      #     value: "no"
-      #   - name: USE_ENV_CONFIG_FILES
-      #     value: "yes"
-      #   ports:
-      #   - containerPort: 5000
-      # /container - cb-manager
-
       # container - zookeeper
       - name: zookeeper
         image: digitalwonderland/zookeeper
@@ -108,8 +68,6 @@ spec:
             mountPath: /usr/share/logstash/config/
           - name: context-broker-logstash-conf
             mountPath: /usr/share/logstash/pipeline/
-          - name: node
-            mountPath: /mnt/node
       # /container - logstash
 
       # container - elasticsearch
@@ -121,7 +79,11 @@ spec:
         - containerPort: 9200
         volumeMounts:
         - name: context-broker-elasticsearch-config
-          mountPath: /usr/share/elasticsearch/config/
+          mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          subPath: elasticsearch.yml
+        - name: context-broker-elasticsearch-config
+          mountPath: /usr/share/elasticsearch/config/log4j2.properties
+          subPath: log4j2.properties
         - name: context-broker-elasticsearch-data
           mountPath: /usr/share/elasticsearch/data/
       # /container - elasticsearch
@@ -140,24 +102,6 @@ spec:
         - name: context-broker-kibana-resources
           mountPath: /usr/share/kibana/resources/
       # /container - kibana
-
-      initContainers:
-      - name: elasticsearch-configuration
-        image: busybox
-        command: ["sh", "-c", "chmod 777 /mnt/node/mnt/elasticsearch-data"]
-        securityContext:
-          runAsUser: 0
-        volumeMounts:
-        - name: node
-          mountPath: /mnt/node/
-      - name: kibana-configuration
-        image: busybox
-        command: ["sh", "-c", "chmod 777 /mnt/node/mnt/kibana-data"]
-        securityContext:
-          runAsUser: 0
-        volumeMounts:
-        - name: node
-          mountPath: /mnt/node/
 
       volumes:
       # volumes - logstash
@@ -183,15 +127,17 @@ spec:
             path: ssh-server.conf
           - key: system.conf
             path: system.conf
-      - name: node
-        hostPath:
-          path: /
       # /volumes - logstash
 
       # volumes - elasticsearch
       - name: context-broker-elasticsearch-config
         configMap:
           name: context-broker-elasticsearch
+          items:
+          - key: elasticsearch-6.8.1.yml
+            path: elasticsearch.yml
+          - key: log4j2.properties
+            path: log4j2.properties
       - name: context-broker-elasticsearch-data
         persistentVolumeClaim:
           claimName: elasticsearch-pv-claim

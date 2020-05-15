@@ -1,0 +1,198 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: context-broker
+  namespace: guard-kube
+spec:
+  selector:
+    matchLabels:
+      app: context-broker
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: context-broker
+    spec:
+      containers:
+      # container - cb-manager
+      - name: cb-manager
+        image: guardproject/cb-manager:latest
+        env:
+        - name: CB_MANAGER_GIT_URL
+          value: "https://guard-token:2nsubUuUss8sQ-Mue_yN@gitlab.com/guard-repositories/cb-manager"
+        - name: CB_MANAGER_ROOT
+          value: "/root/cb-manager"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "5000"
+        - name: DEV_USERNAME
+          value: "cb-manager"
+        - name: DEV_PASSWORD
+          value: "a9d4034da07d8ef31db1cd4119b6a4552fdfbd19787e2848e71c8ee3b47703a7" # "guard" in hashed sha256
+        - name: ELASTICSEARCH_HOST
+          value: "elasticsearch-service"
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_RETRY_PERIOD
+          value: "1min"
+        - name: ELASTICSEARCH_TIMEOUT
+          value: "20s"
+        - name: HEARTBEAT_PERIOD
+          value: "1min"
+        - name: HEARTBEAT_TIMEOUT
+          value: "20s"
+        - name: LOG_LEVEL
+          value: "DEBUG"
+        - name: FORCE_APT_UPGRADE_BOOT
+          value: "no"
+        - name: FORCE_REBUILD_BOOT
+          value: "no"
+        - name: USE_ENV_CONFIG_FILES
+          value: "yes"
+        ports:
+        - containerPort: 5000
+      # /container - cb-manager
+
+      # container - zookeeper
+      - name: zookeeper
+        image: digitalwonderland/zookeeper
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOOKEEPER_ID
+          value: "1"
+        - name: ZOOKEEPER_SERVER_1
+          value: localhost
+      # /container - zookeeper
+
+      # container - kafka
+      - name: kafka
+        image: wurstmeister/kafka
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_ADVERTISED_PORT
+          value: "9092"
+        - name: KAFKA_ADVERTISED_HOST_NAME
+          value: kafka-service
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: localhost:2181
+        - name: KAFKA_BROKER_ID
+          value: "0"
+        - name: KAFKA_CREATE_TOPICS
+          value: "ssh-server:1:1,mysql:1:1,apache:1:1,system:1:1"
+      # /container - kafka
+
+      # container - kafka-web-gui
+      # - name: kafka-web-gui
+      #   image: obsidiandynamics/kafdrop
+      #   ports:
+      #   - containerPort: 9000
+      #   env:
+      #   - name: KAFKA_BROKERCONNECT
+      #     value: "kafka-service:9092"
+      #   - name: JVM_OPTS
+      #     value: "-Xms32M -Xmx64M"
+      #   - name: SERVER_SERVLET_CONTEXTPATH
+      #     value: "/"
+      # /container - kafka-web-gui
+
+      # container - logstash
+      - name: logstash
+        image: docker.elastic.co/logstash/logstash:7.0.1
+        ports:
+        - containerPort: 5144
+        volumeMounts:
+          - name: context-broker-logstash
+            mountPath: /usr/share/logstash/config/
+          - name: context-broker-logstash-conf
+            mountPath: /usr/share/logstash/pipeline/
+      # /container - logstash
+
+      # container - elasticsearch
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.0.1
+        securityContext:
+          runAsUser: 0
+        ports:
+        - containerPort: 9200
+        volumeMounts:
+        - name: context-broker-elasticsearch-config
+          mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          subPath: elasticsearch.yml
+        - name: context-broker-elasticsearch-config
+          mountPath: /usr/share/elasticsearch/config/log4j2.properties
+          subPath: log4j2.properties
+        - name: context-broker-elasticsearch-data
+          mountPath: /usr/share/elasticsearch/data/
+      # /container - elasticsearch
+
+      # container - kibana
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:7.0.1
+        ports:
+        - containerPort: 5601
+        volumeMounts:
+        - name: context-broker-kibana
+          mountPath: /usr/share/kibana/config/kibana.yml
+          subPath: kibana.yml
+        - name: context-broker-kibana-data
+          mountPath: /usr/share/kibana/data/
+        - name: context-broker-kibana-resources
+          mountPath: /usr/share/kibana/resources/
+      # /container - kibana
+
+      volumes:
+      # volumes - logstash
+      - name: context-broker-logstash
+        configMap:
+          name: context-broker-logstash
+          items:
+          - key: logstash.yml
+            path: logstash.yml
+          - key: pipelines.yml
+            path: pipelines.yml
+          - key: log4j2.properties
+            path: log4j2.properties
+      - name: context-broker-logstash-conf
+        configMap:
+          name: context-broker-logstash
+          items:
+          - key: apache.conf
+            path: apache.conf
+          - key: mysql.conf
+            path: mysql.conf
+          - key: ssh-server.conf
+            path: ssh-server.conf
+          - key: system.conf
+            path: system.conf
+      # /volumes - logstash
+
+      # volumes - elasticsearch
+      - name: context-broker-elasticsearch-config
+        configMap:
+          name: context-broker-elasticsearch
+          items:
+          - key: elasticsearch-7.0.1.yml
+            path: elasticsearch.yml
+          - key: log4j2.properties
+            path: log4j2.properties
+      - name: context-broker-elasticsearch-data
+        persistentVolumeClaim:
+          claimName: elasticsearch-pv-claim
+      # /volumes - elasticsearch
+
+      # volumes - kibana
+      - name: context-broker-kibana
+        configMap:
+          name: context-broker-kibana
+          items:
+          - key: kibana.yml
+            path: kibana.yml
+      - name: context-broker-kibana-data
+        persistentVolumeClaim:
+          claimName: kibana-pv-claim
+      - name: context-broker-kibana-resources
+        emptyDir: {}
+      # /volumes - kibana
