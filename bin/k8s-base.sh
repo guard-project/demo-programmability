@@ -1,13 +1,12 @@
 function k8s-start {
     function usage {
-        echo "Usage: k8s-start [ -h ] [ -v 6.8.1|7.0.1 ] [ -s ] [ -c ] [ -p ] [ -e ]"
+        echo "Usage: k8s-start [ -h ] [ -v 6.8.1|7.0.1 ] [ -s ] [ -c ] [ -e ]"
     }
 
     OPTIND=1
     unset elk_version
     reset_storage=0
     reset_configmap=0
-    reset_pod=0
     reset_service=0
     while getopts "hv:scp" opt; do
         case "$opt" in
@@ -19,8 +18,6 @@ function k8s-start {
             s)  reset_storage=1
                 ;;
             c)  reset_configmap=1
-                ;;
-            p)  reset_pod=1
                 ;;
             e)  reset_service=1
                 ;;
@@ -118,13 +115,6 @@ function k8s-start {
     k8s exec deploy/context-broker -c elasticsearch -- curl -XPUT -d "@fix-index.json" -H 'Content-Type:application/json' localhost:9200/ssh-server
     echo
 
-    # echo Kibana Update
-    k8s cp -c kibana $RESOURCES_DIR/context-broker/kibana/kibana-milestones-vis-$elk_version.zip $context_broker:/usr/share/kibana/resources/kibana-milestones-vis-$elk_version.zip
-    k8s cp -c kibana $RESOURCES_DIR/context-broker/kibana/datasweet_formula-2.1.2_kibana-$elk_version.zip $context_broker:/usr/share/kibana/resources/datasweet_formula-2.1.2_kibana-$elk_version.zip
-    k8s exec deploy/context-broker -c kibana -- bin/kibana-plugin install file:///usr/share/kibana/resources/kibana-milestones-vis-$elk_version.zip
-    k8s exec deploy/context-broker -c kibana -- bin/kibana-plugin install file:///usr/share/kibana/resources/datasweet_formula-2.1.2_kibana-$elk_version.zip
-    # echo
-
     echo Execution Environments
     echo - Apache
     k8s apply -f pod/apache-$elk_version.pod.yaml
@@ -133,13 +123,6 @@ function k8s-start {
     echo - SSH-Server
     k8s apply -f pod/ssh-server-$elk_version.pod.yaml
     echo
-
-    wait-done -p apache -c filebeat -t 80 -s 2
-    k8s exec deploy/apache -c apache -- rm -rf /usr/local/apache2/logs/access.log
-    k8s exec deploy/apache -c apache -- touch /usr/local/apache2/logs/access.log
-
-    wait-done -p ssh-server -c ssh-server -n -t 22 -s 2
-    k8s exec deploy/ssh-server -c ssh-server -- apk add hping3 --update-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing
 }
 
 function k8s-frwd {

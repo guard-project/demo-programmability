@@ -130,7 +130,7 @@ spec:
 
       # container - kibana
       - name: kibana
-        image: docker.elastic.co/kibana/kibana:7.0.1
+        image: guardproject/kibana:7.0.1
         ports:
         - containerPort: 5601
         volumeMounts:

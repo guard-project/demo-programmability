@@ -53,7 +53,7 @@ spec:
 
       # container - ssh-server
       - name: ssh-server
-        image: anthonyneto/sshserver
+        image: guardproject/sshserver:latest
         ports:
         - containerPort: 22
         volumeMounts:
