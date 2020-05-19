@@ -10,7 +10,7 @@
 1. Go to the directory.
 
    ```console
-   cd demo-programmabiliy
+   cd demo-programmability
    ```
 
 2. Apply configuration.
@@ -25,14 +25,9 @@
    k8s-start
    ```
 
-4. Start in separate shell the kibana port forwarding
-
-   ```console
-   k8s-frwd -t kibana
-   ```
-
-5. Open **Kibana** the browser at ```http://localhost:5601```.
-   In Management > Saved Object import the JSON ```demo-programmabiliy/resources/context-broker/kibana/saved-objects.json```.
+4. Open **Kibana** the browser at ```http://localhost:5601```.
+   In Management > Saved Object import the JSON ```demo-programmability/resources/context-broker/kibana/saved-objects-$elk_version.json```
+   where $elk_version is the version of Elastic stack (at this moment: 6.8.1 or 7.0.1).
 
 ## Traffic Generator
 
@@ -67,7 +62,7 @@ Set the period to collect data by the agents.
 - Filebeat
 
   ```console
-  k8s-period-filebeat -p deploy/apache - s<period>
+  k8s-period-filebeat -p deploy/apache - s <period>
   ```
 
   E.g.: ```k8s-period-filebeat -p deploy/apache -s 10s```
@@ -103,6 +98,7 @@ Set the period to collect data by the agents.
   ```
 
   E.g.:
+
   ```console
   k8s-period-metricbeat -p deploy/apache -m system -s 10s
   k8s-period-metricbeat -p deploy/mysql -m system -s 10s
@@ -150,7 +146,6 @@ Set the period to collect data by the agents.
 - ```k8s-serv``` - shortcut for ```k8s-get services```.
 - ```k8s-map``` - shortcut for ```k8s-get configmaps```.
 
-- ```k8s-reset``` - Reset all the configurations.
 - ```k8s-start``` - Start the demo.
 -
 - ```k8s-frwd``` -t <target> - port forwarding for <target>. Possible values: elastic, kibana.
@@ -164,40 +159,3 @@ Set the period to collect data by the agents.
 - ```k8s-period-filebeat``` -p <pod> - gets the __period__ (e.g. 10s) for ```filebeat``` in <pod>.
 - ```k8s-period-metricbeat``` -p <pod> -m <module> - gets the __period__ (e.g. 10s) for <module> of ```metricbeat``` in <pod> pod.
 - ```k8s-period-cubebeat``` -p <pod> - gets the __period__ (e.g. 10s) for ```cubebeat``` in <pod>.
-
-## Info about pods
-
-### Apache
-
-- ```error.log``` and ```access.log``` saved in ```/usr/local/apache2/logs```.
-
-### Filebeat
-
-- ```log.yml``` in ```/usr/share/filebeat/config/```.
-- ```filebeat.yml``` in ```/usr/share/filebeat/```.
-
-### Metricbeat
-
-- ```metricbeat.yml``` in ```/usr/share/metricbeat/config```.
-- ```system.yml``` in ```/usr/share/metricbeat/modules.d```.
-
-## MySQL
-
-### Metricbeat
-
-- ```metricbeat.yml``` in ```/usr/share/metricbeat/config```.
-- ```mysql.yml``` in ```/usr/share/metricbeat/modules.d```.
-- ```system.yml``` in ```/usr/share/metricbeat/modules.d```.
-
-## SSH Server
-
-### Metricbeat
-
-- ```metricbeat.yml``` in ```/usr/share/metricbeat/config```.
-- ```system.yml``` in ```/usr/share/metricbeat/modules.d```.
-
-### Cubebeat
-
-- ```cubebeat.yml``` in ```/root/config/cubebeat.yml```.
-- Symbolic link to ```/root/config/cubebeat.yml``` in ```/root/cubebeat.yml```.
-- Executable in ```/root/cubebeat```.

@@ -8,7 +8,7 @@ function k8s-start {
     reset_storage=0
     reset_configmap=0
     reset_service=0
-    while getopts "hv:scp" opt; do
+    while getopts "hv:sce" opt; do
         case "$opt" in
             h)  usage
                 return 0
@@ -52,52 +52,65 @@ function k8s-start {
     if [ $reset_configmap -eq 1 ]; then
         echo Map
         k8s delete configmap --all
+
         # apache
-        k8s create configmap apache-conf --from-file=$APACHE_DIR/apache/conf/httpd.conf
-        k8s create configmap apache-filebeat --from-file=$APACHE_DIR/filebeat/filebeat.yml \
-                                                --from-file=$APACHE_DIR/filebeat/config/log.yml
-        k8s create configmap apache-metricbeat --from-file=$APACHE_DIR/metricbeat/metricbeat.yml \
-                                                --from-file=$APACHE_DIR/metricbeat/modules.d/system.yml
-        k8s create configmap apache-logstash --from-file=$APACHE_DIR/logstash/logstash.yml \
-                                                --from-file=$APACHE_DIR/logstash/pipelines.yml \
-                                                --from-file=$APACHE_DIR/logstash/log4j2.properties \
-                                                --from-file=$APACHE_DIR/logstash/conf.d/apache.conf \
-                                                --from-file=$APACHE_DIR/logstash/conf.d/system.conf
+        k8s create configmap apache-conf --from-file=$APACHE_DIR/apache/conf
+
+        k8s create configmap apache-filebeat        --from-file=$APACHE_DIR/filebeat
+        k8s create configmap apache-filebeat-config --from-file=$APACHE_DIR/filebeat/config
+
+        k8s create configmap apache-metricbeat         --from-file=$APACHE_DIR/metricbeat
+        k8s create configmap apache-metricbeat-modules --from-file=$APACHE_DIR/metricbeat/modules.d
+
+        k8s create configmap apache-heartbeat          --from-file=$APACHE_DIR/heartbeat
+        k8s create configmap apache-heartbeat-monitors --from-file=$APACHE_DIR/heartbeat/monitors.d
+
+        k8s create configmap apache-logstash-config   --from-file=$APACHE_DIR/logstash/config
+        k8s create configmap apache-logstash-pipeline --from-file=$APACHE_DIR/logstash/pipeline
+
         # mysql
-        k8s create configmap mysql-conf --from-file=$MYSQL_DIR/mysql/my.cnf
-        k8s create configmap mysql-metricbeat --from-file=$MYSQL_DIR/metricbeat/metricbeat.yml \
-                                                --from-file=$MYSQL_DIR/metricbeat/modules.d/mysql.yml \
-                                                --from-file=$MYSQL_DIR/metricbeat/modules.d/system.yml
-        k8s create configmap mysql-logstash --from-file=$MYSQL_DIR/logstash/logstash.yml \
-                                                --from-file=$MYSQL_DIR/logstash/pipelines.yml \
-                                                --from-file=$MYSQL_DIR/logstash/log4j2.properties \
-                                                --from-file=$MYSQL_DIR/logstash/conf.d/mysql-system.conf
+        k8s create configmap mysql-metricbeat         --from-file=$MYSQL_DIR/metricbeat
+        k8s create configmap mysql-metricbeat-modules --from-file=$MYSQL_DIR/metricbeat/modules.d
+
+        k8s create configmap mysql-heartbeat          --from-file=$MYSQL_DIR/heartbeat
+        k8s create configmap mysql-heartbeat-monitors --from-file=$MYSQL_DIR/heartbeat/monitors.d
+
+        k8s create configmap mysql-logstash-config   --from-file=$MYSQL_DIR/logstash/config
+        k8s create configmap mysql-logstash-pipeline --from-file=$MYSQL_DIR/logstash/pipeline
+
         # ssh-server
-        k8s create configmap ssh-server-cubebeat --from-file=$SSH_SERVER_DIR/cubebeat/config.d/synflood.yml
-        k8s create configmap ssh-server-metricbeat --from-file=$SSH_SERVER_DIR/metricbeat/metricbeat.yml \
-                                                --from-file=$SSH_SERVER_DIR/metricbeat/modules.d/system.yml
-        k8s create configmap ssh-server-logstash --from-file=$SSH_SERVER_DIR/logstash/logstash.yml \
-                                                    --from-file=$SSH_SERVER_DIR/logstash/pipelines.yml \
-                                                    --from-file=$SSH_SERVER_DIR/logstash/log4j2.properties \
-                                                    --from-file=$SSH_SERVER_DIR/logstash/conf.d/ssh-server.conf \
-                                                    --from-file=$SSH_SERVER_DIR/logstash/conf.d/system.conf
+        k8s create configmap ssh-server-cubebeat        --from-file=$SSH_SERVER_DIR/cubebeat
+        k8s create configmap ssh-server-cubebeat-config --from-file=$SSH_SERVER_DIR/cubebeat/config.d
+
+        k8s create configmap ssh-server-metricbeat         --from-file=$SSH_SERVER_DIR/metricbeat
+        k8s create configmap ssh-server-metricbeat-modules --from-file=$SSH_SERVER_DIR/metricbeat/modules.d
+
+        k8s create configmap ssh-server-heartbeat          --from-file=$SSH_SERVER_DIR/heartbeat
+        k8s create configmap ssh-server-heartbeat-monitors --from-file=$SSH_SERVER_DIR/heartbeat/monitors.d
+
+        k8s create configmap ssh-server-logstash-config   --from-file=$SSH_SERVER_DIR/logstash/config
+        k8s create configmap ssh-server-logstash-pipeline --from-file=$SSH_SERVER_DIR/logstash/pipeline
+
         # context-broker
-        k8s create configmap context-broker-logstash --from-file=$CONTEXT_BROKER_DIR/logstash/logstash.yml \
-                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/pipelines.yml \
-                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/log4j2.properties \
-                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/apache.conf \
-                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/mysql.conf \
-                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/ssh-server.conf \
-                                                        --from-file=$CONTEXT_BROKER_DIR/logstash/conf.d/system.conf
-        k8s create configmap context-broker-elasticsearch --from-file=$CONTEXT_BROKER_DIR/elasticsearch/elasticsearch-$elk_version.yml \
-                                                          --from-file=$CONTEXT_BROKER_DIR/elasticsearch/log4j2.properties
-        k8s create configmap context-broker-kibana --from-file=$CONTEXT_BROKER_DIR/kibana/kibana.yml
+        k8s create configmap context-broker-metricbeat         --from-file=$CONTEXT_BROKER_DIR/metricbeat
+        k8s create configmap context-broker-metricbeat-modules --from-file=$CONTEXT_BROKER_DIR/metricbeat/modules.d
+
+        k8s create configmap context-broker-heartbeat          --from-file=$CONTEXT_BROKER_DIR/heartbeat
+        k8s create configmap context-broker-heartbeat-monitors --from-file=$CONTEXT_BROKER_DIR/heartbeat/monitors.d
+
+        k8s create configmap context-broker-logstash-config   --from-file=$CONTEXT_BROKER_DIR/logstash/config
+        k8s create configmap context-broker-logstash-pipeline --from-file=$CONTEXT_BROKER_DIR/logstash/pipeline
+
+        k8s create configmap context-broker-elasticsearch-config --from-file=$CONTEXT_BROKER_DIR/elasticsearch/config
+
+        k8s create configmap context-broker-kibana-config --from-file=$CONTEXT_BROKER_DIR/kibana/config
+
         echo
     fi
 
     if [ $reset_service -eq 1 ]; then
         echo Service
-        k8s delete configmap --all
+        k8s delete service --all
         k8s apply -f service
         echo
     fi
@@ -105,23 +118,30 @@ function k8s-start {
     echo Context broker
     k8s apply -f pod/context-broker-$elk_version.pod.yaml
     wait-done -p context-broker -c elasticsearch -t 9200 -s 2
-    k8s-pod-vars -p context-broker
-    echo POD context-broker=$context_broker
     echo
 
     echo Elastic Fix
-    k8s cp -c elasticsearch $RESOURCES_DIR/context-broker/elasticsearch/fix-index.json $context_broker:/usr/share/elasticsearch/fix-index.json
-    k8s exec deploy/context-broker -c elasticsearch -- curl -XDELETE localhost:9200/ssh-server
-    k8s exec deploy/context-broker -c elasticsearch -- curl -XPUT -d "@fix-index.json" -H 'Content-Type:application/json' localhost:9200/ssh-server
+    k8s exec deploy/context-broker -c elasticsearch -- curl -s -XDELETE localhost:9200/ssh-server | jq
+    echo
+
+    echo Node
+    k8s apply -f pod/node.pod.yaml
     echo
 
     echo Execution Environments
-    echo - Apache
+    echo
+
+    echo Apache
     k8s apply -f pod/apache-$elk_version.pod.yaml
-    echo - MySQL
+    echo
+
+    echo MySQL
     k8s apply -f pod/mysql-$elk_version.pod.yaml
-    echo - SSH-Server
+    echo
+
+    echo SSH-Server
     k8s apply -f pod/ssh-server-$elk_version.pod.yaml
+    wait-done -p ssh-server -c ssh-server -n -t 22 -s 2
     echo
 }
 

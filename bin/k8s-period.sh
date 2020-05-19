@@ -124,7 +124,7 @@ function k8s-period-cubebeat {
         return 1
     fi
 
-    config_file=/root/go/src/gitlab.com/guard-repositories/cubebeat/config.d/synflood.yml
+    config_file=/opt/go/src/gitlab.com/guard-repositories/cubebeat/config.d/synflood.yml
 
     if [ -n "$period" ]; then
         k8s exec $pod -c cubebeat -- sed -i "s/period:.*/period: $period/g" $config_file

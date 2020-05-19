@@ -1,14 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: elasticsearch-service
+  name: elasticsearch
   namespace: guard-kube
   labels:
     app: context-broker
 spec:
   selector:
     app: context-broker
-  type: LoadBalancer
+  type: NodePort
   ports:
-  - name: elasticsearch-port
+  - name: elasticsearch
     port: 9200
+    targetPort: 9200
+    nodePort: 30920

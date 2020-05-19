@@ -1,5 +1,11 @@
+name: apache
+tags:
+  - "filebeat"
+  - "apache"
+  - "log"
+
 filebeat.config.inputs:
-  path: /usr/share/filebeat/config/*.yml
+  path: config/*.yml
   reload:
     enabled: true
     period: 5s
@@ -8,8 +14,8 @@ setup:
   template.settings:
     index.number_of_shards: 3
 
-output.logstash:
-  hosts: ["localhost:5044"]
+output.logstash.hosts:
+  - "localhost:5044"
 
 processors:
   - add_host_metadata: ~
@@ -17,5 +23,19 @@ processors:
 
 logging:
   level: info
-  selectors: ["*"]
+  selectors:
+   - "*"
   metrics.enabled: false
+  to_files: true
+  files:
+    path: logs
+    name: filebeat.log
+    keepfiles: 7
+    permissions: 0644
+
+xpack.monitoring:
+  enabled: true
+  elasticsearch:
+    hosts:
+      - "elasticsearch:9200"
+    sniffing: true
