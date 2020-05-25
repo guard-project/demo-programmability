@@ -1,7 +1,7 @@
 - type: icmp
   name: apache
   id: host@apache
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   hosts:
     - "apache"

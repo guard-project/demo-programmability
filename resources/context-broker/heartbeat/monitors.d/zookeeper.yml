@@ -1,7 +1,7 @@
 - type: tcp
   name: zookeeper
   id: zookeeper@context-broker
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   urls:
     - "context-broker:2181"

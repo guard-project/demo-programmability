@@ -1,7 +1,7 @@
 - type: icmp
   name: mysql
   id: host@mysql
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   hosts:
     - "mysql"

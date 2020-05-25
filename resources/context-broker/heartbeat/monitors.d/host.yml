@@ -1,7 +1,7 @@
 - type: icmp
   name: context-broker
   id: host@context-broker
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   hosts:
     - "context-broker"

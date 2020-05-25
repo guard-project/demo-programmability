@@ -1,7 +1,7 @@
 - type: tcp
   name: kafka
   id: kafka@context-broker
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   urls:
     - "context-broker:9092"

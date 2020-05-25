@@ -1,7 +1,7 @@
 - type: http
   name: kibana
   id: kibana@context-broker
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   urls:
     - "http://context-broker:5601"

@@ -1,7 +1,7 @@
 - type: http
   name: elasticsearch
   id: elasticsearch@context-broker
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   urls:
     - "http://context-broker:9200"

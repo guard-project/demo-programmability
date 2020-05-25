@@ -1,7 +1,7 @@
 - type: tcp
   name: logstash
   id: logstash@mysql
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   urls:
     - "mysql:5144"

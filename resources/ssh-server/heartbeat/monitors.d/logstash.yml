@@ -1,7 +1,7 @@
 - type: tcp
   name: logstash
   id: logstash@ssh-server
-  enabled: true
+  enabled: false
   schedule: "@every 60s"
   urls:
     - "ssh-server:5044"
